@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">gymapp</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string-array name="weight_units">
+        <item>kg</item>
+        <item>lbs</item>
+    </string-array>
+    <string-array name="height_units">
+        <item>cm</item>
+        <item>ft</item>
+    </string-array>
+    <string name="email_digits">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@._-</string>
+</resources>
