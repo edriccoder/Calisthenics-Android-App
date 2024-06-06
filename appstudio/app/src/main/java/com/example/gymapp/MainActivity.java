@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +20,7 @@ import com.vishnusivadas.advanced_httpurlconnection.PutData;
 public class MainActivity extends AppCompatActivity {
     EditText loginUsername, loginPassword;
     Button login, signup, forgotPass;
+    TextView error;
 
     public static class GlobalsLogin {
         public static String username;
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         login = (Button) findViewById(R.id.button2);
         signup = (Button) findViewById(R.id.button3);
         forgotPass = (Button) findViewById(R.id.forgot);
+        error = findViewById(R.id.error);
 
         CheckBox passwordToggle = findViewById(R.id.passwordToggle);
 
@@ -96,7 +99,8 @@ public class MainActivity extends AppCompatActivity {
                                         finish();
 
                                     } else {
-                                        Toast.makeText(getApplicationContext(),result,Toast.LENGTH_SHORT).show();
+                                        error.setVisibility(View.VISIBLE);
+                                        error.setText(result);
                                     }
 
                                 }
@@ -104,7 +108,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                 } else {
-                    Toast.makeText(MainActivity.this, "All fields required!", Toast.LENGTH_SHORT).show();
+                    error.setVisibility(View.VISIBLE);
+                    error.setText("All fields required!");
                 }
             }
         });
