@@ -57,13 +57,13 @@ public class signups extends AppCompatActivity {
                     String name = String.valueOf(signupName.getText());
                     String email = String.valueOf(signupEmail.getText());
                     String password = String.valueOf(signupPassword.getText());
-                    String username = String.valueOf(signupUsername.getText());
+                    Globals.username = String.valueOf(signupUsername.getText());
 
                     Intent intent = new Intent(signups.this, OtpActivity.class);
                     intent.putExtra("name", name);
                     intent.putExtra("email", email);
                     intent.putExtra("password", password);
-                    intent.putExtra("username", username);
+                    intent.putExtra("username", Globals.username);
                     startActivity(intent);
 
 
