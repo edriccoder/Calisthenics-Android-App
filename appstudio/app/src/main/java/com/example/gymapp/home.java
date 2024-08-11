@@ -1,112 +1,96 @@
 package com.example.gymapp;
 
-import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
-import com.vishnusivadas.advanced_httpurlconnection.PutData;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class home extends Fragment {
-    ListView listView;
-    ImageButton imageButton;
-    CardView cardView;
+
+    private ListView listViewFocusAreas;
+    private FocusAreaAdapter adapter;
+    private ArrayList<String> focusAreas;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        imageButton = view.findViewById(R.id.dumbell);
-        listView = view.findViewById(R.id.listView);
-        cardView = view.findViewById(R.id.cardView2);
+        listViewFocusAreas = view.findViewById(R.id.listViewFocusAreas);
+        focusAreas = new ArrayList<>();
+        adapter = new FocusAreaAdapter(getContext(), focusAreas);
 
-        imageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getContext(), exercise_list.class);
-                startActivity(intent);
-            }
-        });
+        listViewFocusAreas.setAdapter(adapter);
 
-        cardView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getContext(), warmup.class);
-                intent.putExtra("TITLE_EXTRA", "Warm Up");
-                startActivity(intent);
-            }
-        });
+        Button buttonBeginner = view.findViewById(R.id.button);
+        Button buttonIntermediate = view.findViewById(R.id.button4);
+        Button buttonAdvance = view.findViewById(R.id.button5);
 
-
-        String username = getActivity().getIntent().getStringExtra("USERNAME_KEY");
-        fetchWeeklyGoals(username);
+        buttonBeginner.setOnClickListener(v -> updateFocusAreas("Beginner"));
+        buttonIntermediate.setOnClickListener(v -> updateFocusAreas("Intermediate"));
+        buttonAdvance.setOnClickListener(v -> updateFocusAreas("Advance"));
 
         return view;
     }
 
-    private void fetchWeeklyGoals(String username) {
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String[] field = {"username"};
-                String[] data = {username};
+    private void updateFocusAreas(String level) {
+        focusAreas.clear(); // Clear the current list
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getWeeklyGoalandFocusGoalByUsername.php", "POST", field, data);
-                if (putData.startPut()) {
-                    if (putData.onComplete()) {
-                        String result = putData.getResult();
-                        ArrayList<WeeklyGoal> weeklyGoalsList = parseWeeklyGoals(result);
-
-                        if (weeklyGoalsList != null && !weeklyGoalsList.isEmpty()) {
-                            Day_Adapter adapter = new Day_Adapter(getContext(), weeklyGoalsList);
-                            listView.setAdapter(adapter);
-                        } else {
-                            Toast.makeText(getContext(), "No weekly goals found", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Toast.makeText(getContext(), "Error completing request", Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    Toast.makeText(getContext(), "Error sending request", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-    }
-
-    private ArrayList<WeeklyGoal> parseWeeklyGoals(String result) {
-        ArrayList<WeeklyGoal> weeklyGoalsList = new ArrayList<>();
-
-        try {
-            JSONArray jsonArray = new JSONArray(result);
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String day = jsonObject.optString("day", "");
-                String focusBody = jsonObject.optString("focusbody", "");
-                WeeklyGoal weeklyGoal = new WeeklyGoal(day, focusBody);
-                weeklyGoalsList.add(weeklyGoal);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Error parsing weekly goals data", Toast.LENGTH_SHORT).show();
+        switch (level) {
+            case "Beginner":
+                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs"));
+                break;
+            case "Intermediate":
+                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back"));
+                break;
+            case "Advance":
+                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back", "Cardio"));
+                break;
+            default:
+                focusAreas.add("No focus areas available");
+                break;
         }
 
-        return weeklyGoalsList;
+        adapter.notifyDataSetChanged(); // Notify the adapter to refresh the ListView
+        listViewFocusAreas.setVisibility(View.VISIBLE); // Ensure the ListView is visible
+    }
+
+    // Custom Adapter for CardView
+    private static class FocusAreaAdapter extends ArrayAdapter<String> {
+
+        public FocusAreaAdapter(Context context, ArrayList<String> focusAreas) {
+            super(context, 0, focusAreas);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // Check if an existing view is being reused, otherwise inflate the view
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_card, parent, false);
+            }
+
+            // Get the data item for this position
+            String focusArea = getItem(position);
+
+            // Lookup view for data population
+            TextView textViewItem = convertView.findViewById(R.id.textViewItem);
+
+            // Populate the data into the template view using the data object
+            textViewItem.setText(focusArea);
+
+            // Return the completed view to render on screen
+            return convertView;
+        }
     }
 }
