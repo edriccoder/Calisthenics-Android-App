@@ -94,12 +94,11 @@ public class OtpActivity extends AppCompatActivity {
             countDownTimer.cancel();
         }
 
-        countDownTimer = new CountDownTimer(300000, 1000) { // 5 minutes timer
+        countDownTimer = new CountDownTimer(60000, 1000) { // 1-minute timer
             @Override
             public void onTick(long millisUntilFinished) {
-                long minutes = millisUntilFinished / 60000;
-                long seconds = (millisUntilFinished % 60000) / 1000;
-                timerTextView.setText(String.format("%02d:%02d", minutes, seconds));
+                long seconds = millisUntilFinished / 1000;
+                timerTextView.setText(String.format("00:%02d", seconds));
                 resendOtpButton.setText("Resend code in ");
             }
 

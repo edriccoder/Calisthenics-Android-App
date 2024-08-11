@@ -93,7 +93,7 @@ public class goals extends AppCompatActivity {
                 String[] field = {"username", "activity"};
                 String[] data = {username, activity};
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/createActivityGoal.php", "POST", field, data);
+                    PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/createActivityGoal.php", "POST", field, data);
                 if (putData.startPut()) {
                     if (putData.onComplete()) {
                         String result = putData.getResult();

@@ -55,7 +55,7 @@ public class level extends AppCompatActivity {
         ImageButton back = findViewById(R.id.back);
         back.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), focus.class);
+                    Intent intent = new Intent(getApplicationContext(), focus.class);
                 startActivity(intent);
             }
         });

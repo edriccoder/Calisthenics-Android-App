@@ -18,13 +18,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.vishnusivadas.advanced_httpurlconnection.PutData;
 
 public class MainActivity extends AppCompatActivity {
-    EditText loginUsername, loginPassword;
-    Button login, signup, forgotPass;
-    TextView error;
+        EditText loginUsername, loginPassword;
+        Button login, signup, forgotPass;
+        TextView error;
 
-    public static class GlobalsLogin {
-        public static String username;
-    }
+        public static class GlobalsLogin {
+            public static String username;
+        }
 
 
     @Override
@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
                             String[] data = new String[2];
                             data[0] = GlobalsLogin.username;
                             data[1] = password;
-                            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/login.php", "POST", field, data);
+                                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/login.php", "POST", field, data);
                             if (putData.startPut()) {
                                 if (putData.onComplete()) {
                                     String result = putData.getResult();
