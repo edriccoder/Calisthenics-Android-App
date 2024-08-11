@@ -75,7 +75,7 @@
         android:background="@null"/>
 
     <Spinner
-        android:id="@+id/spinner2"
+        android:id="@+id/spinner"
         android:layout_width="361dp"
         android:layout_height="54dp"
         app:layout_constraintBottom_toBottomOf="parent"

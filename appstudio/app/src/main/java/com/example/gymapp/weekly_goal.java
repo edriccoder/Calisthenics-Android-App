@@ -26,7 +26,7 @@ public class weekly_goal extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weekly_goal);
 
-        spinner = findViewById(R.id.spinner2);
+        spinner = findViewById(R.id.spinner);
 
         setupSpinner();
 
