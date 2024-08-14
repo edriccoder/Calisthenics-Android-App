@@ -4,15 +4,39 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardElevation="4dp"
-    app:cardCornerRadius="8dp">
+    app:cardCornerRadius="15dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="130dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/rectangle_9"
+            android:clipToOutline="true" />
+
+        <!-- Small RelativeLayout in the top right corner -->
+        <ImageView
+            android:id="@+id/imageViewTopRight"
+            android:layout_width="100dp"
+            android:layout_height="20dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="8dp"
+            android:background="@drawable/inter3">
+
+        </ImageView>
+
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/textViewItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:textSize="18sp"
-        android:textColor="@android:color/black" />
+        android:textColor="@color/white"
+        android:textSize="18sp" />
 
 </androidx.cardview.widget.CardView>

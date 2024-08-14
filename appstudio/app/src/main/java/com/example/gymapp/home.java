@@ -7,10 +7,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
@@ -37,22 +37,22 @@ public class home extends Fragment {
         Button buttonIntermediate = view.findViewById(R.id.button4);
         Button buttonAdvance = view.findViewById(R.id.button5);
 
-        buttonBeginner.setOnClickListener(v -> updateFocusAreas("Beginner"));
-        buttonIntermediate.setOnClickListener(v -> updateFocusAreas("Intermediate"));
-        buttonAdvance.setOnClickListener(v -> updateFocusAreas("Advance"));
+        buttonBeginner.setOnClickListener(v -> updateFocusAreas("Beginner", R.drawable.beginner));
+        buttonIntermediate.setOnClickListener(v -> updateFocusAreas("Intermediate", R.drawable.inter3));
+        buttonAdvance.setOnClickListener(v -> updateFocusAreas("Advance", R.drawable.advance3));
 
         return view;
     }
 
-    private void updateFocusAreas(String level) {
+    private void updateFocusAreas(String level, int imageResId) {
         focusAreas.clear(); // Clear the current list
 
         switch (level) {
             case "Beginner":
-                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs"));
+                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back", "Cardio"));
                 break;
             case "Intermediate":
-                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back"));
+                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back", "Cardio"));
                 break;
             case "Advance":
                 focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back", "Cardio"));
@@ -62,35 +62,41 @@ public class home extends Fragment {
                 break;
         }
 
-        adapter.notifyDataSetChanged(); // Notify the adapter to refresh the ListView
-        listViewFocusAreas.setVisibility(View.VISIBLE); // Ensure the ListView is visible
+        adapter.setImageResId(imageResId);
+        adapter.notifyDataSetChanged();
+        listViewFocusAreas.setVisibility(View.VISIBLE);
     }
+
 
     // Custom Adapter for CardView
     private static class FocusAreaAdapter extends ArrayAdapter<String> {
+
+        private int imageResId;
 
         public FocusAreaAdapter(Context context, ArrayList<String> focusAreas) {
             super(context, 0, focusAreas);
         }
 
+        public void setImageResId(int imageResId) {
+            this.imageResId = imageResId;
+        }
+
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            // Check if an existing view is being reused, otherwise inflate the view
             if (convertView == null) {
                 convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_card, parent, false);
             }
 
-            // Get the data item for this position
             String focusArea = getItem(position);
 
-            // Lookup view for data population
             TextView textViewItem = convertView.findViewById(R.id.textViewItem);
+            ImageView imageViewTopRight = convertView.findViewById(R.id.imageViewTopRight);
 
-            // Populate the data into the template view using the data object
             textViewItem.setText(focusArea);
+            imageViewTopRight.setBackgroundResource(imageResId);
 
-            // Return the completed view to render on screen
             return convertView;
         }
     }
+
 }
