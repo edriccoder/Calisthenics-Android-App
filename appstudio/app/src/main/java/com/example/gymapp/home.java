@@ -1,6 +1,7 @@
 package com.example.gymapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +22,7 @@ public class home extends Fragment {
     private ListView listViewFocusAreas;
     private FocusAreaAdapter adapter;
     private ArrayList<String> focusAreas;
+    private String selectedDifficultyLevel;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -41,21 +43,27 @@ public class home extends Fragment {
         buttonIntermediate.setOnClickListener(v -> updateFocusAreas("Intermediate", R.drawable.inter3));
         buttonAdvance.setOnClickListener(v -> updateFocusAreas("Advance", R.drawable.advance3));
 
+        listViewFocusAreas.setOnItemClickListener((parent, view1, position, id) -> {
+            String selectedFocusBody = focusAreas.get(position);
+
+            Intent intent = new Intent(getContext(), FocusBody.class);
+            intent.putExtra("focusbody", selectedFocusBody);
+            intent.putExtra("exdifficulty", selectedDifficultyLevel);
+            startActivity(intent);
+        });
+
         return view;
     }
 
     private void updateFocusAreas(String level, int imageResId) {
-        focusAreas.clear(); // Clear the current list
+        selectedDifficultyLevel = level;
+        focusAreas.clear();
 
         switch (level) {
             case "Beginner":
-                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back", "Cardio"));
-                break;
             case "Intermediate":
-                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back", "Cardio"));
-                break;
             case "Advance":
-                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back", "Cardio"));
+                focusAreas.addAll(Arrays.asList("Arms", "Chest", "Abs", "Legs", "Back"));
                 break;
             default:
                 focusAreas.add("No focus areas available");
@@ -67,8 +75,6 @@ public class home extends Fragment {
         listViewFocusAreas.setVisibility(View.VISIBLE);
     }
 
-
-    // Custom Adapter for CardView
     private static class FocusAreaAdapter extends ArrayAdapter<String> {
 
         private int imageResId;
@@ -98,5 +104,4 @@ public class home extends Fragment {
             return convertView;
         }
     }
-
 }
