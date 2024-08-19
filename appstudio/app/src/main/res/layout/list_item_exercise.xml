@@ -17,7 +17,7 @@
             android:id="@+id/imageViewExercise"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:scaleType="centerCrop"
+            android:scaleType="fitXY"
             android:layout_gravity="center_vertical" />
 
         <LinearLayout

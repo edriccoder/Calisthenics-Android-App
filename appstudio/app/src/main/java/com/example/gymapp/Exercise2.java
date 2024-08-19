@@ -3,13 +3,13 @@ package com.example.gymapp;
 public class Exercise2 {
     private String exName;
     private String exDesc;
-    private String exImg;
+    private String imageUrl;
 
 
-    public Exercise2(String exName, String exDesc, String exImg) {
+    public Exercise2(String exName, String exDesc, String imageUrl) {
         this.exName = exName;
         this.exDesc = exDesc;
-        this.exImg = exImg;
+        this.imageUrl = imageUrl;
 
     }
 
@@ -22,8 +22,8 @@ public class Exercise2 {
         return exDesc;
     }
 
-    public String getExImg() {
-        return exImg;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
 

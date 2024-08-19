@@ -8,7 +8,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.squareup.picasso.Picasso;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import java.util.ArrayList;
 
@@ -32,7 +33,22 @@ public class ExerciseAdapter extends ArrayAdapter<Exercise2> {
 
         textViewName.setText(exercise.getExName());
         textViewDesc.setText(exercise.getExDesc());
-        Picasso.get().load(exercise.getExImg()).into(imageViewExercise);
+
+        if (!exercise.getImageUrl().isEmpty()) {
+            if (exercise.getImageUrl().endsWith(".gif")) {
+                Glide.with(getContext())
+                        .asGif()
+                        .load(exercise.getImageUrl())
+                        .into(imageViewExercise);
+            } else {
+                Glide.with(getContext())
+                        .load(exercise.getImageUrl())
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(imageViewExercise);
+            }
+        } else {
+            imageViewExercise.setImageResource(R.drawable.dumbell);
+        }
 
         return convertView;
     }
