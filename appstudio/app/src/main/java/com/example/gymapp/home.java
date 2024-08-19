@@ -29,6 +29,7 @@ public class home extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
+        ImageView exercise = view.findViewById(R.id.imageView4);
         listViewFocusAreas = view.findViewById(R.id.listViewFocusAreas);
         focusAreas = new ArrayList<>();
         adapter = new FocusAreaAdapter(getContext(), focusAreas);
@@ -50,6 +51,14 @@ public class home extends Fragment {
             intent.putExtra("focusbody", selectedFocusBody);
             intent.putExtra("exdifficulty", selectedDifficultyLevel);
             startActivity(intent);
+        });
+
+        exercise.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), exercise_list.class);
+                startActivity(intent);
+            }
         });
 
         return view;

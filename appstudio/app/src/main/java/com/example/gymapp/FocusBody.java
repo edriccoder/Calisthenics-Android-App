@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +28,9 @@ public class FocusBody extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_focus_body);
 
+        TextView textViewFocusBody = findViewById(R.id.textViewFocusBody);
+        TextView textViewExDifficulty = findViewById(R.id.textViewExDifficulty);
+
         listViewExercises = findViewById(R.id.listViewExercises);
         exercises = new ArrayList<>();
         adapter = new ExerciseAdapter(this, exercises);
@@ -35,8 +39,12 @@ public class FocusBody extends AppCompatActivity {
         String focusBody = getIntent().getStringExtra("focusbody");
         String exDifficulty = getIntent().getStringExtra("exdifficulty");
 
+        textViewFocusBody.setText("Focus: " + focusBody);
+        textViewExDifficulty.setText("Difficulty: " + exDifficulty);
+
         fetchExercises(focusBody, exDifficulty);
     }
+
 
     private void fetchExercises(String focusBody, String exDifficulty) {
         Handler handler = new Handler(Looper.getMainLooper());
