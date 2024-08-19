@@ -51,7 +51,7 @@ public class FocusBody extends AppCompatActivity {
             data[0] = focusBody;
             data[1] = exDifficulty;
 
-            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getExercises.php", "POST", field, data);
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getFocusBody.php", "POST", field, data);
             if (putData.startPut()) {
                 if (putData.onComplete()) {
                     String result = putData.getResult();
