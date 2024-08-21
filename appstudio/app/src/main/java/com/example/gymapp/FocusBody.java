@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 public class FocusBody extends AppCompatActivity {
 
-    private ListView listViewExercises;
     private ExerciseAdapter adapter;
     private ArrayList<Exercise2> exercises;
 
@@ -31,7 +30,7 @@ public class FocusBody extends AppCompatActivity {
         TextView textViewFocusBody = findViewById(R.id.textViewFocusBody);
         TextView textViewExDifficulty = findViewById(R.id.textViewExDifficulty);
 
-        listViewExercises = findViewById(R.id.listViewExercises);
+        ListView listViewExercises = findViewById(R.id.listViewExercises);
         exercises = new ArrayList<>();
         adapter = new ExerciseAdapter(this, exercises);
         listViewExercises.setAdapter(adapter);
@@ -49,12 +48,11 @@ public class FocusBody extends AppCompatActivity {
     private void fetchExercises(String focusBody, String exDifficulty) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(() -> {
-            // Starting the data upload process
+
             String[] field = new String[2];
             field[0] = "focusbody";
             field[1] = "exdifficulty";
 
-            // Creating the data array
             String[] data = new String[2];
             data[0] = focusBody;
             data[1] = exDifficulty;

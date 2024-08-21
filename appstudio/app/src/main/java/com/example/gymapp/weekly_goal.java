@@ -4,80 +4,83 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ImageButton;
-import android.widget.Spinner;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.gymapp.weight;
 import com.vishnusivadas.advanced_httpurlconnection.PutData;
 
 public class weekly_goal extends AppCompatActivity {
 
-    Spinner spinner;
-    String selectedDay;
+    SeekBar seekBar;
+    TextView selectedDaysText;
+    String selectedDays;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_weekly_goal);
 
-        spinner = findViewById(R.id.spinner);
+        // Initialize SeekBar and TextView
+        seekBar = findViewById(R.id.seekBar);
+        selectedDaysText = findViewById(R.id.selectedDaysText);
 
-        setupSpinner();
+        setupSeekBar();
 
-        findViewById(R.id.next).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (selectedDay != null && !selectedDay.isEmpty()) {
-                    addToDatabase(selectedDay);
-                } else {
-                    Toast.makeText(getApplicationContext(), "Please select a day.", Toast.LENGTH_SHORT).show();
-                }
+        findViewById(R.id.next).setOnClickListener(v -> {
+            String username = signups.Globals.username;
+            if (username == null || username.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "Username is missing. Please log in again.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (selectedDays != null && !selectedDays.isEmpty() && !selectedDays.equals("0")) {
+                addToDatabase(username, selectedDays);
+            } else {
+                Toast.makeText(getApplicationContext(), "Please select the number of days.", Toast.LENGTH_SHORT).show();
             }
         });
 
-        findViewById(R.id.back).setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), goals.class);
-                startActivity(intent);
+        findViewById(R.id.back).setOnClickListener(v -> {
+            Intent intent = new Intent(getApplicationContext(), goals.class);
+            startActivity(intent);
+        });
+    }
+
+    private void setupSeekBar() {
+        seekBar.setMax(7);
+        seekBar.setProgress(1);
+
+        selectedDays = "1";
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+                selectedDays = String.valueOf(progress > 0 ? progress : 1);
+                selectedDaysText.setText(selectedDays + " times/week");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
     }
 
-    private void setupSpinner() {
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.week_days_array, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedDay = parent.getItemAtPosition(position).toString();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                selectedDay = null;
-            }
-        });
-    }
-
-    private void addToDatabase(String day) {
-        String username = signups.Globals.username;
-
+    private void addToDatabase(String username, String days) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(() -> {
-            String[] field = new String[2];
-            field[0] = "day";
-            field[1] = "username";
-
-            String[] data = new String[2];
-            data[0] = day;
-            data[1] = username;
+            // Ensure the fields match the expected PHP parameter names
+            String[] field = {"day", "username"}; // Change 'days' to 'day'
+            String[] data = {days, username};
 
             PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/addWeeklyGoal.php", "POST", field, data);
             if (putData.startPut()) {

@@ -38,7 +38,7 @@
         android:id="@+id/textView9"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Weekly Training"
+        android:text="How often would you like to workout?"
         android:textColor="#000000"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -46,6 +46,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.24" />
+
+    <TextView
+        android:id="@+id/selectedDaysText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1 day"
+        android:textColor="#000000"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@id/seekBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintVertical_bias="0.1" />
 
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/back"
@@ -66,23 +78,24 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Skip"
+        android:background="@null"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.023"
-        android:background="@null"/>
+        app:layout_constraintVertical_bias="0.023" />
 
-    <Spinner
-        android:id="@+id/spinner"
+    <SeekBar
+        android:id="@+id/seekBar"
         android:layout_width="361dp"
-        android:layout_height="54dp"
+        android:layout_height="wrap_content"
+        android:max="7"
+        android:progress="1"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.418"
-        android:entries="@array/week_days_array" />
+        app:layout_constraintVertical_bias="0.418" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
