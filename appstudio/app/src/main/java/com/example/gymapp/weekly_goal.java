@@ -78,8 +78,8 @@ public class weekly_goal extends AppCompatActivity {
     private void addToDatabase(String username, String days) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(() -> {
-            // Ensure the fields match the expected PHP parameter names
-            String[] field = {"day", "username"}; // Change 'days' to 'day'
+
+            String[] field = {"day", "username"};
             String[] data = {days, username};
 
             PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/addWeeklyGoal.php", "POST", field, data);
