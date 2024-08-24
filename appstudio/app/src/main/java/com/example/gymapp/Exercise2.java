@@ -4,15 +4,14 @@ public class Exercise2 {
     private String exName;
     private String exDesc;
     private String imageUrl;
+    private String activity;
 
-
-    public Exercise2(String exName, String exDesc, String imageUrl) {
+    public Exercise2(String exName, String exDesc, String imageUrl, String activity) {
         this.exName = exName;
         this.exDesc = exDesc;
         this.imageUrl = imageUrl;
-
+        this.activity = activity;
     }
-
 
     public String getExName() {
         return exName;
@@ -26,5 +25,8 @@ public class Exercise2 {
         return imageUrl;
     }
 
-
+    public String getActivity() {
+        return activity;
+    }
 }
+

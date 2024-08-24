@@ -29,27 +29,34 @@ public class ExerciseAdapter extends ArrayAdapter<Exercise2> {
 
         TextView textViewName = convertView.findViewById(R.id.textViewName);
         TextView textViewDesc = convertView.findViewById(R.id.textViewDesc);
+        TextView textViewActivity = convertView.findViewById(R.id.textViewActivity);
         ImageView imageViewExercise = convertView.findViewById(R.id.imageViewExercise);
 
-        textViewName.setText(exercise.getExName());
-        textViewDesc.setText(exercise.getExDesc());
+        if (exercise != null) {
+            textViewName.setText(exercise.getExName());
+            textViewDesc.setText(exercise.getExDesc());
 
-        if (!exercise.getImageUrl().isEmpty()) {
-            if (exercise.getImageUrl().endsWith(".gif")) {
-                Glide.with(getContext())
-                        .asGif()
-                        .load(exercise.getImageUrl())
-                        .into(imageViewExercise);
+            String activityText = (exercise.getActivity() == null || exercise.getActivity().isEmpty())
+                    ? "Activity: Not specified"
+                    : "Activity: " + exercise.getActivity();
+            textViewActivity.setText(activityText);
+
+            if (!exercise.getImageUrl().isEmpty()) {
+                if (exercise.getImageUrl().endsWith(".gif")) {
+                    Glide.with(getContext())
+                            .asGif()
+                            .load(exercise.getImageUrl())
+                            .into(imageViewExercise);
+                } else {
+                    Glide.with(getContext())
+                            .load(exercise.getImageUrl())
+                            .transition(DrawableTransitionOptions.withCrossFade())
+                            .into(imageViewExercise);
+                }
             } else {
-                Glide.with(getContext())
-                        .load(exercise.getImageUrl())
-                        .transition(DrawableTransitionOptions.withCrossFade())
-                        .into(imageViewExercise);
+                imageViewExercise.setImageResource(R.drawable.dumbell); // Fallback image
             }
-        } else {
-            imageViewExercise.setImageResource(R.drawable.dumbell);
         }
-
         return convertView;
     }
 }

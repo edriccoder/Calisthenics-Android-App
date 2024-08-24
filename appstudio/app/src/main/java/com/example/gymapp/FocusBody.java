@@ -3,6 +3,7 @@ package com.example.gymapp;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,23 +45,26 @@ public class FocusBody extends AppCompatActivity {
         fetchExercises(focusBody, exDifficulty);
     }
 
-
     private void fetchExercises(String focusBody, String exDifficulty) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
 
-            String[] field = new String[2];
-            field[0] = "focusbody";
-            field[1] = "exdifficulty";
+            String[] field = new String[3];
+            field[0] = "username";
+            field[1] = "focusbody";
+            field[2] = "exdifficulty";
 
-            String[] data = new String[2];
-            data[0] = focusBody;
-            data[1] = exDifficulty;
+            String[] data = new String[3];
+            data[0] = username;
+            data[1] = focusBody;
+            data[2] = exDifficulty;
 
             PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getFocusBody.php", "POST", field, data);
             if (putData.startPut()) {
                 if (putData.onComplete()) {
                     String result = putData.getResult();
+                    Log.d("FetchExercises", "Full Response: " + result);
                     parseExercises(result);
                 } else {
                     Toast.makeText(FocusBody.this, "Error: Could not complete the request.", Toast.LENGTH_SHORT).show();
@@ -70,24 +74,44 @@ public class FocusBody extends AppCompatActivity {
     }
 
     private void parseExercises(String jsonData) {
+        Log.d("ParseExercises", "JSON Data: " + jsonData);
+
+        jsonData = jsonData.replaceAll("<[^>]*>", "");  // Remove HTML tags
+        jsonData = jsonData.trim();
+
+        Log.d("ParseExercises", "Cleaned JSON Data: " + jsonData);
+
         try {
             JSONObject jsonObject = new JSONObject(jsonData);
-            JSONArray exercisesArray = jsonObject.getJSONArray("exercises");
 
-            exercises.clear();
-            for (int i = 0; i < exercisesArray.length(); i++) {
-                JSONObject exerciseObject = exercisesArray.getJSONObject(i);
-
-                String exName = exerciseObject.getString("exname");
-                String exDesc = exerciseObject.getString("exdesc");
-                String exImg = exerciseObject.getString("eximg");
-
-                exercises.add(new Exercise2(exName, exDesc, exImg));
+            if (jsonObject.has("error")) {
+                String errorMessage = jsonObject.getString("error");
+                Toast.makeText(FocusBody.this, errorMessage, Toast.LENGTH_LONG).show();
+                return;
             }
 
-            runOnUiThread(() -> adapter.notifyDataSetChanged());
+            if (jsonObject.has("exercises")) {
+                JSONArray exercisesArray = jsonObject.getJSONArray("exercises");
+
+                exercises.clear();
+                for (int i = 0; i < exercisesArray.length(); i++) {
+                    JSONObject exerciseObject = exercisesArray.getJSONObject(i);
+
+                    String exName = exerciseObject.getString("exname");
+                    String exDesc = exerciseObject.getString("exdesc");
+                    String exImg = exerciseObject.getString("eximg");
+                    String activity = exerciseObject.getString("activity"); // Fetch activity from JSON
+
+                    exercises.add(new Exercise2(exName, exDesc, exImg, activity));
+                }
+
+                runOnUiThread(() -> adapter.notifyDataSetChanged());
+            } else {
+                Log.d("ParseExercises", "No exercises key in JSON.");
+            }
         } catch (JSONException e) {
             e.printStackTrace();
+            Toast.makeText(FocusBody.this, "JSON parsing error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 }

@@ -18,7 +18,7 @@ import java.util.Arrays;
 public class goals extends AppCompatActivity {
     Button but1, but2, but3;
     Button[] buttons;
-    String[] goalOptions = {"Loss Weight", "Build Muscle", "Keep Fit"};
+    String[] goalOptions = {"LossWeight", "BuildMuscle", "KeepFit"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
