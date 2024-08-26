@@ -1,6 +1,8 @@
 package com.example.gymapp;
 
-public class Exercise2 {
+import java.io.Serializable;
+
+public class Exercise2 implements Serializable {
     private String exName;
     private String exDesc;
     private String imageUrl;

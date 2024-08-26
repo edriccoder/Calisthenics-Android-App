@@ -1,6 +1,7 @@
 package com.example.gymapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ public class ExerciseAdapter extends ArrayAdapter<Exercise2> {
     }
 
     @Override
+
     public View getView(int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_exercise, parent, false);
@@ -34,7 +36,6 @@ public class ExerciseAdapter extends ArrayAdapter<Exercise2> {
 
         if (exercise != null) {
             textViewName.setText(exercise.getExName());
-            textViewDesc.setText(exercise.getExDesc());
 
             String activityText = (exercise.getActivity() == null || exercise.getActivity().isEmpty())
                     ? "Activity: Not specified"
@@ -56,7 +57,16 @@ public class ExerciseAdapter extends ArrayAdapter<Exercise2> {
             } else {
                 imageViewExercise.setImageResource(R.drawable.dumbell); // Fallback image
             }
+
+            // Set an onClickListener for the whole item
+            convertView.setOnClickListener(v -> {
+                Intent intent = new Intent(getContext(), ExerciseDetailActivity.class);
+                intent.putExtra("exercise", exercise);
+                intent.putExtra("currentPosition", position);
+                getContext().startActivity(intent);
+            });
         }
         return convertView;
     }
+
 }

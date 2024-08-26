@@ -76,38 +76,38 @@ public class FocusBody extends AppCompatActivity {
     private void parseExercises(String jsonData) {
         Log.d("ParseExercises", "JSON Data: " + jsonData);
 
-        jsonData = jsonData.replaceAll("<[^>]*>", "");  // Remove HTML tags
-        jsonData = jsonData.trim();
-
-        Log.d("ParseExercises", "Cleaned JSON Data: " + jsonData);
-
         try {
-            JSONObject jsonObject = new JSONObject(jsonData);
+            if (jsonData.startsWith("{")) {
+                JSONObject jsonObject = new JSONObject(jsonData);
 
-            if (jsonObject.has("error")) {
-                String errorMessage = jsonObject.getString("error");
-                Toast.makeText(FocusBody.this, errorMessage, Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            if (jsonObject.has("exercises")) {
-                JSONArray exercisesArray = jsonObject.getJSONArray("exercises");
-
-                exercises.clear();
-                for (int i = 0; i < exercisesArray.length(); i++) {
-                    JSONObject exerciseObject = exercisesArray.getJSONObject(i);
-
-                    String exName = exerciseObject.getString("exname");
-                    String exDesc = exerciseObject.getString("exdesc");
-                    String exImg = exerciseObject.getString("eximg");
-                    String activity = exerciseObject.getString("activity"); // Fetch activity from JSON
-
-                    exercises.add(new Exercise2(exName, exDesc, exImg, activity));
+                if (jsonObject.has("error")) {
+                    String errorMessage = jsonObject.getString("error");
+                    Toast.makeText(FocusBody.this, errorMessage, Toast.LENGTH_LONG).show();
+                    return;
                 }
 
-                runOnUiThread(() -> adapter.notifyDataSetChanged());
+                if (jsonObject.has("exercises")) {
+                    JSONArray exercisesArray = jsonObject.getJSONArray("exercises");
+
+                    exercises.clear();
+                    for (int i = 0; i < exercisesArray.length(); i++) {
+                        JSONObject exerciseObject = exercisesArray.getJSONObject(i);
+
+                        String exName = exerciseObject.getString("exname");
+                        String exDesc = exerciseObject.getString("exdesc");
+                        String exImg = exerciseObject.getString("eximg");
+                        String activityValue = exerciseObject.getString("activity_value");
+
+                        exercises.add(new Exercise2(exName, exDesc, exImg, activityValue));
+                    }
+
+                    runOnUiThread(() -> adapter.notifyDataSetChanged());
+                } else {
+                    Log.d("ParseExercises", "No exercises key in JSON.");
+                }
             } else {
-                Log.d("ParseExercises", "No exercises key in JSON.");
+                Log.e("ParseExercises", "Unexpected response: " + jsonData);
+                Toast.makeText(FocusBody.this, "Unexpected response format.", Toast.LENGTH_SHORT).show();
             }
         } catch (JSONException e) {
             e.printStackTrace();
