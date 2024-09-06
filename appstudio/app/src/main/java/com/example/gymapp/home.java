@@ -14,6 +14,8 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -40,6 +42,7 @@ public class home extends Fragment {
         Button buttonIntermediate = view.findViewById(R.id.button4);
         Button buttonAdvance = view.findViewById(R.id.button5);
 
+        // Pass both difficulty level and image resource ID to updateFocusAreas
         buttonBeginner.setOnClickListener(v -> updateFocusAreas("Beginner", R.drawable.beginner));
         buttonIntermediate.setOnClickListener(v -> updateFocusAreas("Intermediate", R.drawable.inter3));
         buttonAdvance.setOnClickListener(v -> updateFocusAreas("Advance", R.drawable.advance3));
@@ -53,17 +56,15 @@ public class home extends Fragment {
             startActivity(intent);
         });
 
-        exercise.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getContext(), exercise_list.class);
-                startActivity(intent);
-            }
+        exercise.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), exercise_list.class);
+            startActivity(intent);
         });
 
         return view;
     }
 
+    // Update the method to accept an image resource ID as a parameter
     private void updateFocusAreas(String level, int imageResId) {
         selectedDifficultyLevel = level;
         focusAreas.clear();
@@ -106,9 +107,37 @@ public class home extends Fragment {
 
             TextView textViewItem = convertView.findViewById(R.id.textViewItem);
             ImageView imageViewTopRight = convertView.findViewById(R.id.imageViewTopRight);
+            ImageView imageViewBackground = convertView.findViewById(R.id.background);
 
             textViewItem.setText(focusArea);
             imageViewTopRight.setBackgroundResource(imageResId);
+
+            int drawableResId;
+            switch (focusArea) {
+                case "Arms":
+                    drawableResId = R.drawable.arms_back;
+                    break;
+                case "Chest":
+                    drawableResId = R.drawable.chest_back;
+                    break;
+                case "Abs":
+                    drawableResId = R.drawable.abs_back;
+                    break;
+                case "Legs":
+                    drawableResId = R.drawable.legs_back;
+                    break;
+                case "Back":
+                    drawableResId = R.drawable.back_back;
+                    break;
+                default:
+                    drawableResId = R.drawable.rectangle_9; // Fallback background
+                    break;
+            }
+
+            Glide.with(getContext())
+                    .load(drawableResId)
+                    .override(imageViewBackground.getWidth(), imageViewBackground.getHeight()) // Scale down if needed
+                    .into(imageViewBackground);
 
             return convertView;
         }

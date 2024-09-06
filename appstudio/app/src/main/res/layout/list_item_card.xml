@@ -4,30 +4,37 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="15dp">
+    android:elevation="4dp"
+    app:cardCornerRadius="15dp"
+    android:backgroundTint="@android:color/white">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="130dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/rectangle_9"
-            android:clipToOutline="true" />
+    <ImageView
+        android:id="@+id/background"
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/rectangle_9"
+        android:clipToOutline="true" />
 
-        <!-- Small RelativeLayout in the top right corner -->
         <ImageView
             android:id="@+id/imageViewTopRight"
-            android:layout_width="100dp"
-            android:layout_height="20dp"
+            android:layout_width="179dp"
+            android:layout_height="41dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
-            android:layout_margin="8dp"
-            android:background="@drawable/inter3">
-
-        </ImageView>
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="215dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/inter3"
+            android:clipToOutline="true"
+            android:scaleType="centerCrop" />
 
     </RelativeLayout>
 
@@ -36,7 +43,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:textColor="@color/white"
-        android:textSize="18sp" />
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:background="@android:color/transparent"
+        android:layout_marginTop="-30dp"
+        android:layout_gravity="bottom" />
 
 </androidx.cardview.widget.CardView>

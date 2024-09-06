@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background color -->
+    <solid android:color="@color/white" />
+
+    <!-- Rounded corners -->
+    <corners android:radius="16dp" />
+
+    <!-- Padding inside the dialog -->
+    <padding
+        android:left="16dp"
+        android:top="16dp"
+        android:right="16dp"
+        android:bottom="16dp" />
+
+    <!-- Shadow effect -->
+    <shadowColor android:color="#33000000" />
+    <shadowRadius android:radius="8dp" />
+
+    <!-- Optional border -->
+    <stroke
+        android:width="2dp"
+        android:color="@color/primaryColor" />
+</shape>

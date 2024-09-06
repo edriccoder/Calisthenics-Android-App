@@ -1,7 +1,11 @@
 package com.example.gymapp;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,7 +21,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
 
     private TextView textViewName, textViewDesc, textViewActivity;
     private ImageView imageViewExercise;
-    private Button buttonNext;
+    private Button buttonNext, emgBut;
     private ArrayList<Exercise2> exerciseList;
     private int currentPosition;
 
@@ -31,8 +35,8 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         textViewActivity = findViewById(R.id.textViewDetailActivity);
         imageViewExercise = findViewById(R.id.imageViewDetailExercise);
         buttonNext = findViewById(R.id.buttonNext);
+        emgBut = findViewById(R.id.emgBut);
 
-        // Get the intent data
         Intent intent = getIntent();
         exerciseList = (ArrayList<Exercise2>) intent.getSerializableExtra("exerciseList");
         currentPosition = intent.getIntExtra("currentPosition", -1);
@@ -46,10 +50,17 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         // Button to move to the next exercise
         buttonNext.setOnClickListener(v -> {
             if (currentPosition < exerciseList.size() - 1) {
-                currentPosition++;
-                displayExerciseDetails(exerciseList.get(currentPosition));
+                showRestingDialog();
             } else {
                 Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        emgBut.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(ExerciseDetailActivity.this, emg_bluetooth.class);
+                startActivity(intent);
             }
         });
     }
@@ -67,5 +78,38 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         } else {
             imageViewExercise.setImageResource(R.drawable.dumbell); // Fallback image
         }
+    }
+
+    private void showRestingDialog() {
+        // Create the dialog for resting
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setCancelable(false);
+        dialog.setContentView(R.layout.dialog_rest);
+
+        TextView textViewCountdown = dialog.findViewById(R.id.textViewCountdown);
+        Button buttonNextExercise = dialog.findViewById(R.id.buttonNextExercise);
+
+        // Create a 30-second countdown timer
+        new CountDownTimer(30000, 1000) {
+            public void onTick(long millisUntilFinished) {
+                // Update the countdown text
+                textViewCountdown.setText(String.valueOf(millisUntilFinished / 1000));
+            }
+
+            public void onFinish() {
+                // Enable the "Next Exercise" button when the timer finishes
+                buttonNextExercise.setEnabled(true);
+            }
+        }.start();
+
+        // Handle the "Next Exercise" button click
+        buttonNextExercise.setOnClickListener(v -> {
+            dialog.dismiss(); // Close the dialog
+            currentPosition++;
+            displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+        });
+
+        dialog.show(); // Show the dialog
     }
 }
