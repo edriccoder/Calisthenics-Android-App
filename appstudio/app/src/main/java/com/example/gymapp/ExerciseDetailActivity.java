@@ -2,19 +2,23 @@ package com.example.gymapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
+
+import java.util.ArrayList;
 
 public class ExerciseDetailActivity extends AppCompatActivity {
 
     private TextView textViewName, textViewDesc, textViewActivity;
     private ImageView imageViewExercise;
     private Button buttonNext;
+    private ArrayList<Exercise2> exerciseList;
     private int currentPosition;
 
     @Override
@@ -30,27 +34,38 @@ public class ExerciseDetailActivity extends AppCompatActivity {
 
         // Get the intent data
         Intent intent = getIntent();
-        Exercise2 exercise = (Exercise2) intent.getSerializableExtra("exercise");
+        exerciseList = (ArrayList<Exercise2>) intent.getSerializableExtra("exerciseList");
         currentPosition = intent.getIntExtra("currentPosition", -1);
 
-        if (exercise != null) {
-            displayExerciseDetails(exercise);
+        if (exerciseList != null && !exerciseList.isEmpty() && currentPosition >= 0 && currentPosition < exerciseList.size()) {
+            displayExerciseDetails(exerciseList.get(currentPosition));
+        } else {
+            Toast.makeText(this, "Exercise data is not available", Toast.LENGTH_SHORT).show();
         }
 
+        // Button to move to the next exercise
         buttonNext.setOnClickListener(v -> {
-            Intent nextIntent = new Intent(ExerciseDetailActivity.this, FocusBody.class);
-            nextIntent.putExtra("currentPosition", currentPosition + 1); // Assuming next exercise is in the next position
-            startActivity(nextIntent);
+            if (currentPosition < exerciseList.size() - 1) {
+                currentPosition++;
+                displayExerciseDetails(exerciseList.get(currentPosition));
+            } else {
+                Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
     private void displayExerciseDetails(Exercise2 exercise) {
-        textViewName.setText(exercise.getExName());
-        textViewDesc.setText(exercise.getExDesc());
-        textViewActivity.setText("Activity: " + exercise.getActivity());
+        textViewName.setText(exercise.getExName() != null ? exercise.getExName() : "No name available");
+        textViewDesc.setText(exercise.getExDesc() != null ? exercise.getExDesc() : "No description available");
+        textViewActivity.setText("Activity: " + (exercise.getActivity() != null ? exercise.getActivity() : "Not specified"));
 
-        Glide.with(this)
-                .load(exercise.getImageUrl())
-                .into(imageViewExercise);
+        // Load image with Glide
+        if (exercise.getImageUrl() != null && !exercise.getImageUrl().isEmpty()) {
+            Glide.with(this)
+                    .load(exercise.getImageUrl())
+                    .into(imageViewExercise);
+        } else {
+            imageViewExercise.setImageResource(R.drawable.dumbell); // Fallback image
+        }
     }
 }
