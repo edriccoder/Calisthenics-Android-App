@@ -1,9 +1,11 @@
 package com.example.gymapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,8 +32,9 @@ public class FocusBody extends AppCompatActivity {
 
         TextView textViewFocusBody = findViewById(R.id.textViewFocusBody);
         TextView textViewExDifficulty = findViewById(R.id.textViewExDifficulty);
-
+        Button buttonStartFirstExercise = findViewById(R.id.buttonStartFirstExercise);
         ListView listViewExercises = findViewById(R.id.listViewExercises);
+
         exercises = new ArrayList<>();
         adapter = new ExerciseAdapter(this, exercises);
         listViewExercises.setAdapter(adapter);
@@ -43,7 +46,21 @@ public class FocusBody extends AppCompatActivity {
         textViewExDifficulty.setText("Difficulty: " + exDifficulty);
 
         fetchExercises(focusBody, exDifficulty);
+
+        // Handle the button click to start the first exercise in the list
+        buttonStartFirstExercise.setOnClickListener(v -> {
+            if (!exercises.isEmpty()) {
+                // Start the ExerciseDetailActivity with the first item in the list
+                Intent intent = new Intent(FocusBody.this, ExerciseDetailActivity.class);
+                intent.putExtra("exerciseList", exercises);  // Pass the full list of exercises
+                intent.putExtra("currentPosition", 0);  // Start with the first exercise
+                startActivity(intent);
+            } else {
+                Toast.makeText(FocusBody.this, "No exercises available to start.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
 
     private void fetchExercises(String focusBody, String exDifficulty) {
         Handler handler = new Handler(Looper.getMainLooper());
