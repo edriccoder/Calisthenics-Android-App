@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
@@ -13,9 +14,20 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ExerciseDetailActivity extends AppCompatActivity {
 
@@ -54,14 +66,12 @@ public class ExerciseDetailActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
             }
+            updateExerciseCount();
         });
 
-        emgBut.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(ExerciseDetailActivity.this, emg_bluetooth.class);
-                startActivity(intent);
-            }
+        emgBut.setOnClickListener(v -> {
+            Intent intent1 = new Intent(ExerciseDetailActivity.this, emg_bluetooth.class);
+            startActivity(intent1);
         });
     }
 
@@ -111,5 +121,49 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         });
 
         dialog.show(); // Show the dialog
+    }
+
+    private void updateExerciseCount() {
+        String url = "https://calestechsync.dermocura.net/calestechsync/update_exercise_count.php";
+
+        String username = MainActivity.GlobalsLogin.username;
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String currentDate = sdf.format(new Date());
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        JSONObject jsonObject = new JSONObject(response);
+                        if (jsonObject.has("success")) {
+                            String successMessage = jsonObject.getString("success");
+                            Toast.makeText(this, successMessage, Toast.LENGTH_SHORT).show();
+                        } else if (jsonObject.has("error")) {
+                            String errorMessage = jsonObject.getString("error");
+                            Toast.makeText(this, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Log.e("ExerciseDetailActivity", "JSON parsing error: " + e.getMessage());
+                        Toast.makeText(this, "An error occurred. Please try again.", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    // Log the error message to Logcat
+                    Log.e("ExerciseDetailActivity", "Volley error: " + error.getMessage());
+                    // Show a user-facing message via Toast (you can customize this message)
+                    Toast.makeText(this, "An error occurred. Please try again.", Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("username", username);
+                params.put("date", currentDate);
+                return params;
+            }
+        };
+
+
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
     }
 }
