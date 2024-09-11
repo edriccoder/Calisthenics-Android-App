@@ -16,4 +16,12 @@
     <color name="background_light">#F5F5F5</color>
     <color name="errorColor">#B00020</color>
     <color name="accentColor">#03DAC5</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="bmi_underweight_color">#ADD8E6</color> <!-- Light Blue -->
+    <color name="bmi_normal_color">#32CD32</color> <!-- Lime Green -->
+    <color name="bmi_overweight_color">#FFD700</color> <!-- Gold -->
+    <color name="bmi_obese_color">#FF4500</color> <!-- OrangeRed -->
+    <color name="success_color">#4CAF50</color>
+    <color name="warning_color">#FF9800</color>
+    <color name="neutral_color">#9E9E9E</color>
 </resources>

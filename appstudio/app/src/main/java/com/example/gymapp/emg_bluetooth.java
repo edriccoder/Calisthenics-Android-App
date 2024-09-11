@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,6 +45,7 @@ public class emg_bluetooth extends AppCompatActivity {
     private TextView bluetoothStatusText;
     private TextView emgValueText;
     private Button connectBluetoothButton;
+    private ProgressBar emgLevelGauge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +53,8 @@ public class emg_bluetooth extends AppCompatActivity {
         setContentView(R.layout.activity_emg_bluetooth);
 
         bluetoothStatusText = findViewById(R.id.bluetoothStatusText);
-        emgValueText = findViewById(R.id.emgValueText);
         connectBluetoothButton = findViewById(R.id.connectBluetoothButton);
+        emgLevelGauge = findViewById(R.id.emgLevelGauge);
 
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
@@ -182,24 +184,28 @@ public class emg_bluetooth extends AppCompatActivity {
                 final int emgLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0); // Assuming 8-bit value
                 runOnUiThread(() -> {
                     String emgLevelText = "";
+                    int progress = 0; // Variable to hold progress value
+
                     switch (emgLevel) {
                         case 1:
                             emgLevelText = "Easy";
-                            bluetoothStatusText.setTextColor(getResources().getColor(android.R.color.holo_green_light));
+                            progress = 33; // 33% for Easy
                             break;
                         case 2:
                             emgLevelText = "Medium";
-                            bluetoothStatusText.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
+                            progress = 66; // 66% for Medium
                             break;
                         case 3:
                             emgLevelText = "Hard";
-                            bluetoothStatusText.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                            progress = 100; // 100% for Hard
                             break;
                         default:
                             emgLevelText = "Below Easy";
-                            bluetoothStatusText.setTextColor(getResources().getColor(android.R.color.darker_gray));
+                            progress = 0; // 0% for Below Easy
                     }
+
                     emgValueText.setText("EMG Level: " + emgLevelText);
+                    emgLevelGauge.setProgress(progress); // Update ProgressBar
                 });
             }
         }
