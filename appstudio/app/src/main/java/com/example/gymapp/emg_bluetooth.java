@@ -59,6 +59,7 @@ public class emg_bluetooth extends AppCompatActivity {
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+        emgValueText = findViewById(R.id.emgValueText);
 
         connectBluetoothButton.setOnClickListener(new View.OnClickListener() {
             @Override

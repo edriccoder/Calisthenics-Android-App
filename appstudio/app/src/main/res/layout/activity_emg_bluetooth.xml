@@ -67,7 +67,7 @@
                 android:progressDrawable="@drawable/custom_progressbar" />
 
             <TextView
-                android:id="@+id/emgLevelText"
+                android:id="@+id/emgValueText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
