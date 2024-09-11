@@ -1,6 +1,7 @@
 package com.example.gymapp;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,12 +13,18 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.vishnusivadas.advanced_httpurlconnection.PutData;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class FocusBody extends AppCompatActivity {
@@ -59,6 +66,7 @@ public class FocusBody extends AppCompatActivity {
                 Toast.makeText(FocusBody.this, "No exercises available to start.", Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
 
@@ -90,6 +98,7 @@ public class FocusBody extends AppCompatActivity {
         });
     }
 
+
     private void parseExercises(String jsonData) {
         Log.d("ParseExercises", "JSON Data: " + jsonData);
 
@@ -115,7 +124,11 @@ public class FocusBody extends AppCompatActivity {
                         String exImg = exerciseObject.getString("eximg");
                         String activityValue = exerciseObject.getString("activity_value");
 
-                        exercises.add(new Exercise2(exName, exDesc, exImg, activityValue));
+                        // Add logic to download and save the image
+                        Exercise2 exercise = new Exercise2(exName, exDesc, exImg, activityValue);
+                        downloadAndSaveImage(exercise); // Download and save the image
+
+                        exercises.add(exercise);
                     }
 
                     runOnUiThread(() -> adapter.notifyDataSetChanged());
@@ -131,4 +144,34 @@ public class FocusBody extends AppCompatActivity {
             Toast.makeText(FocusBody.this, "JSON parsing error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void downloadAndSaveImage(Exercise2 exercise) {
+        String imageUrl = exercise.getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .asBitmap()
+                    .load(imageUrl)
+                    .into(new SimpleTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                            saveImageToStorage(resource, exercise);
+                        }
+                    });
+        }
+    }
+
+    private void saveImageToStorage(Bitmap bitmap, Exercise2 exercise) {
+        File directory = new File(getExternalFilesDir(null), "MyAppImages");
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        File file = new File(directory, exercise.getExName() + ".png"); // Change name as needed
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            exercise.setLocalImagePath(file.getAbsolutePath()); // Set the local image path
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

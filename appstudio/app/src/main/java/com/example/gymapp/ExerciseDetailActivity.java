@@ -59,6 +59,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
             Toast.makeText(this, "Exercise data is not available", Toast.LENGTH_SHORT).show();
         }
 
+
         // Button to move to the next exercise
         buttonNext.setOnClickListener(v -> {
             if (currentPosition < exerciseList.size() - 1) {

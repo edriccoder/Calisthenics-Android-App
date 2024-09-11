@@ -2,6 +2,8 @@ package com.example.gymapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,18 +39,19 @@ public class ExerciseAdapter extends ArrayAdapter<Exercise2> {
         ImageView imageViewExercise = convertView.findViewById(R.id.imageViewExercise);
 
         if (exercise != null) {
-            // Handle potential null values for exercise name and description
             textViewName.setText(exercise.getExName() != null ? exercise.getExName() : "No name available");
             textViewDesc.setText(exercise.getExDesc() != null ? exercise.getExDesc() : "No description available");
 
-            // Handle null or empty activity field
             String activityText = (exercise.getActivity() == null || exercise.getActivity().isEmpty())
                     ? "Activity: Not specified"
                     : "Activity: " + exercise.getActivity();
             textViewActivity.setText(activityText);
 
-            // Handle image loading with fallback in case imageUrl is null or empty
-            if (exercise.getImageUrl() != null && !exercise.getImageUrl().isEmpty()) {
+            // Load the local image if available, otherwise load from URL
+            if (exercise.getLocalImagePath() != null) {
+                Bitmap bitmap = BitmapFactory.decodeFile(exercise.getLocalImagePath());
+                imageViewExercise.setImageBitmap(bitmap);
+            } else if (exercise.getImageUrl() != null && !exercise.getImageUrl().isEmpty()) {
                 if (exercise.getImageUrl().endsWith(".gif")) {
                     Glide.with(getContext())
                             .asGif()
@@ -61,15 +64,14 @@ public class ExerciseAdapter extends ArrayAdapter<Exercise2> {
                             .into(imageViewExercise);
                 }
             } else {
-                // Fallback image if imageUrl is null or empty
                 imageViewExercise.setImageResource(R.drawable.dumbell);
             }
 
             // Set onClickListener to navigate to ExerciseDetailActivity with exercise data
             convertView.setOnClickListener(v -> {
                 Intent intent = new Intent(getContext(), ExerciseDetailActivity.class);
-                intent.putExtra("exerciseList", exerciseList);  // Pass the full list of exercises
-                intent.putExtra("currentPosition", position);    // Pass the current position
+                intent.putExtra("exerciseList", exerciseList);
+                intent.putExtra("currentPosition", position);
                 getContext().startActivity(intent);
             });
         }
