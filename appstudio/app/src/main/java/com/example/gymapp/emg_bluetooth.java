@@ -14,8 +14,12 @@ import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.ParcelUuid;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -25,6 +29,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.util.List;
 import java.util.UUID;
 
 public class emg_bluetooth extends AppCompatActivity {
@@ -32,9 +37,9 @@ public class emg_bluetooth extends AppCompatActivity {
     private static final String TAG = "EMGBluetoothActivity";
     private static final String DEVICE_NAME = "EMG_Sensor";
 
-    private static final UUID EMG_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb"); // EMG Service UUID
-    private static final UUID EMG_VALUE_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb"); // EMG Value Characteristic UUID
-    private static final UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"); // Client Characteristic Configuration Descriptor UUID
+    private static final UUID EMG_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
+    private static final UUID EMG_VALUE_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");
+    private static final UUID CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner bluetoothLeScanner;
@@ -56,8 +61,19 @@ public class emg_bluetooth extends AppCompatActivity {
         emgLevelGauge = findViewById(R.id.emgLevelGauge);
         emgValueText = findViewById(R.id.emgValueText);
 
-        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            bluetoothStatusText.setText("Bluetooth is not enabled");
+            requestBluetoothEnable();
+            return;
+        }
+
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+        }
 
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
 
@@ -73,15 +89,22 @@ public class emg_bluetooth extends AppCompatActivity {
         });
     }
 
+    private void requestBluetoothEnable() {
+        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivityForResult(enableBtIntent, 1);
+    }
+
     private boolean hasBluetoothPermissions() {
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestBluetoothPermissions() {
         ActivityCompat.requestPermissions(this, new String[]{
                 Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.ACCESS_FINE_LOCATION
         }, 1);
     }
 
@@ -89,28 +112,32 @@ public class emg_bluetooth extends AppCompatActivity {
         if (hasBluetoothPermissions()) {
             try {
                 bluetoothLeScanner.startScan(scanCallback);
+                bluetoothStatusText.setText("Scanning for devices...");
             } catch (SecurityException e) {
-                Log.e(TAG, "Bluetooth scan permission not granted");
+                Log.e(TAG, "Bluetooth scan permission not granted", e);
             }
         } else {
             requestBluetoothPermissions();
         }
     }
 
-    private ScanCallback scanCallback = new ScanCallback() {
+    private final ScanCallback scanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             BluetoothDevice device = result.getDevice();
-            if (hasBluetoothPermissions()) {
-                if (DEVICE_NAME.equals(device.getName())) {
-                    try {
-                        bluetoothLeScanner.stopScan(this);
-                        connectToDevice(device);
-                    } catch (SecurityException e) {
-                        Log.e(TAG, "Bluetooth connect permission not granted");
-                    }
-                }
+            Log.d(TAG, "Found device: " + device.getName() + " [" + device.getAddress() + "]");
+
+            List<ParcelUuid> uuids = result.getScanRecord().getServiceUuids();
+            if (uuids != null && uuids.contains(ParcelUuid.fromString(EMG_SERVICE_UUID.toString()))) {
+                bluetoothLeScanner.stopScan(this);
+                connectToDevice(device);
             }
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            Log.e(TAG, "Bluetooth scan failed with error: " + errorCode);
+            bluetoothStatusText.setText("Scan failed. Try again.");
         }
     };
 
@@ -118,32 +145,28 @@ public class emg_bluetooth extends AppCompatActivity {
         if (hasBluetoothPermissions()) {
             try {
                 bluetoothGatt = device.connectGatt(this, false, gattCallback);
+                if (bluetoothGatt == null) {
+                    Log.e(TAG, "Failed to connect to GATT server");
+                }
             } catch (SecurityException e) {
-                Log.e(TAG, "Bluetooth connect permission not granted");
+                Log.e(TAG, "Bluetooth connect failed", e);
             }
-        } else {
-            Log.e(TAG, "Bluetooth connect permission not granted");
         }
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            if (status == BluetoothGatt.GATT_FAILURE) {
+                Log.e(TAG, "GATT connection failed");
+                return;
+            }
+
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 runOnUiThread(() -> bluetoothStatusText.setText("Bluetooth Status: Connected"));
-                if (hasBluetoothPermissions()) {
-                    try {
-                        bluetoothGatt.discoverServices();
-                    } catch (SecurityException e) {
-                        Log.e(TAG, "Bluetooth service discovery permission not granted");
-                    }
-                }
+                bluetoothGatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                runOnUiThread(() -> {
-                    bluetoothStatusText.setText("Bluetooth Status: Disconnected");
-                    emgValueText.setText("EMG Level: Disconnected");
-                    emgLevelGauge.setProgress(0);
-                });
+                runOnUiThread(() -> bluetoothStatusText.setText("Bluetooth Status: Disconnected"));
             }
         }
 
@@ -173,11 +196,9 @@ public class emg_bluetooth extends AppCompatActivity {
                     descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                     try {
                         bluetoothGatt.writeDescriptor(descriptor);
-                        if (hasBluetoothPermissions()) {
-                            bluetoothGatt.setCharacteristicNotification(characteristic, true);
-                        }
+                        bluetoothGatt.setCharacteristicNotification(characteristic, true);
                     } catch (SecurityException e) {
-                        Log.e(TAG, "Bluetooth notification permission not granted");
+                        Log.e(TAG, "Failed to enable notifications", e);
                     }
                 }
             }
@@ -186,25 +207,28 @@ public class emg_bluetooth extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             if (EMG_VALUE_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
-                final int emgLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0); // Assuming 8-bit value
+                final int emgLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                Log.d(TAG, "onCharacteristicChanged triggered with EMG level: " + emgLevel);
+
                 runOnUiThread(() -> {
+                    Log.d(TAG, "Updating UI with EMG level: " + emgLevel);
                     String emgLevelText;
                     int progress;
 
                     switch (emgLevel) {
-                        case 0: // Below Easy
+                        case 0:
                             emgLevelText = "Below Easy";
                             progress = 0;
                             break;
-                        case 1: // Easy
+                        case 1:
                             emgLevelText = "Easy";
                             progress = 33;
                             break;
-                        case 2: // Medium
+                        case 2:
                             emgLevelText = "Medium";
                             progress = 66;
                             break;
-                        case 3: // Hard
+                        case 3:
                             emgLevelText = "Hard";
                             progress = 100;
                             break;
@@ -219,29 +243,4 @@ public class emg_bluetooth extends AppCompatActivity {
             }
         }
     };
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (bluetoothGatt != null) {
-            try {
-                bluetoothGatt.close();
-                bluetoothGatt = null;
-            } catch (SecurityException e) {
-                Log.e(TAG, "Bluetooth disconnect permission not granted");
-            }
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startScan();
-            } else {
-                bluetoothStatusText.setText("Bluetooth permissions required.");
-            }
-        }
-    }
 }
