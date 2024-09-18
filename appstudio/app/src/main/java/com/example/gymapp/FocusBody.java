@@ -31,6 +31,7 @@ public class FocusBody extends AppCompatActivity {
 
     private ExerciseAdapter adapter;
     private ArrayList<Exercise2> exercises;
+    private Button emgBut;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +46,7 @@ public class FocusBody extends AppCompatActivity {
         exercises = new ArrayList<>();
         adapter = new ExerciseAdapter(this, exercises);
         listViewExercises.setAdapter(adapter);
+        emgBut = findViewById(R.id.emgBut2);
 
         String focusBody = getIntent().getStringExtra("focusbody");
         String exDifficulty = getIntent().getStringExtra("exdifficulty");
@@ -65,6 +67,11 @@ public class FocusBody extends AppCompatActivity {
             } else {
                 Toast.makeText(FocusBody.this, "No exercises available to start.", Toast.LENGTH_SHORT).show();
             }
+        });
+
+        emgBut.setOnClickListener(v -> {
+            Intent intent1 = new Intent(FocusBody.this, emg_bluetooth.class);
+            startActivity(intent1);
         });
 
     }

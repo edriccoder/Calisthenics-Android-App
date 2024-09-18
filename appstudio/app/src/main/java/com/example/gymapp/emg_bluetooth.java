@@ -61,6 +61,11 @@ public class emg_bluetooth extends AppCompatActivity {
         emgLevelGauge = findViewById(R.id.emgLevelGauge);
         emgValueText = findViewById(R.id.emgValueText);
 
+        boolean hideButton = getIntent().getBooleanExtra("hide_button", false);
+        if (hideButton) {
+            connectBluetoothButton.setVisibility(View.GONE); // Hide the button
+        }
+
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
