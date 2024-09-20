@@ -28,7 +28,6 @@
             android:layout_width="match_parent"
             android:layout_height="124dp"
             android:layout_margin="16dp"
-            android:padding="16dp"
             app:cardCornerRadius="22dp"
             app:cardElevation="4dp">
 
@@ -89,14 +88,17 @@
 
             </LinearLayout>
 
+
         </androidx.cardview.widget.CardView>
 
         <ListView
             android:id="@+id/exerciseLogListView"
             android:layout_width="match_parent"
             android:layout_height="500dp"
+            android:padding="16dp"
             android:divider="@drawable/divider"
             android:dividerHeight="10sp"/>
+
 
     </LinearLayout>
 </ScrollView>
