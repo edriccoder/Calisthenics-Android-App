@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -100,8 +101,17 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         dialog.setCancelable(false);
         dialog.setContentView(R.layout.dialog_rest);
 
+        TextView textViewExerciseName = dialog.findViewById(R.id.textViewExerciseName);
+        EditText editTextSets = dialog.findViewById(R.id.editTextSets);
+        EditText editTextReps = dialog.findViewById(R.id.editTextReps);
         TextView textViewCountdown = dialog.findViewById(R.id.textViewCountdown);
         Button buttonNextExercise = dialog.findViewById(R.id.buttonNextExercise);
+        Button buttonSkipExercise = dialog.findViewById(R.id.buttonSkipExercise); // Get reference to Skip button
+
+        // Set the exercise name
+        textViewExerciseName.setText(exerciseList.get(currentPosition).getExName());
+
+        String name = exerciseList.get(currentPosition).getExName();
 
         // Create a 30-second countdown timer
         new CountDownTimer(30000, 1000) {
@@ -118,13 +128,75 @@ public class ExerciseDetailActivity extends AppCompatActivity {
 
         // Handle the "Next Exercise" button click
         buttonNextExercise.setOnClickListener(v -> {
-            dialog.dismiss(); // Close the dialog
-            currentPosition++;
-            displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+            String sets = editTextSets.getText().toString();
+            String reps = editTextReps.getText().toString();
+            if (!sets.isEmpty() && !reps.isEmpty()) {
+                logExerciseData(sets, reps, name); // Save sets and reps
+                dialog.dismiss(); // Close the dialog
+                currentPosition++;
+                displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+            } else {
+                Toast.makeText(ExerciseDetailActivity.this, "Please enter sets and reps", Toast.LENGTH_SHORT).show();
+            }
         });
 
-        dialog.show(); // Show the dialog
+        // Handle the "Skip" button click
+        buttonSkipExercise.setOnClickListener(v -> {
+            dialog.dismiss(); // Close the dialog
+            currentPosition++; // Move to the next exercise
+            if (currentPosition < exerciseList.size()) {
+                displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+            } else {
+                Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        dialog.show();
     }
+
+    private void logExerciseData(String sets, String reps, String name) {
+        String url = "https://calestechsync.dermocura.net/calestechsync/update_exercise_log.php";
+
+        String username = MainActivity.GlobalsLogin.username;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String currentDate = sdf.format(new Date());
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    Log.d("ServerResponse", "Raw Response: " + response); // Log the raw response
+                    try {
+                        JSONObject jsonObject = new JSONObject(response); // Attempt to parse as JSON
+                        if (jsonObject.has("success")) {
+                            Toast.makeText(this, "Exercise log updated", Toast.LENGTH_SHORT).show();
+                        } else if (jsonObject.has("error")) {
+                            Toast.makeText(this, "Error: " + jsonObject.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        Log.e("ExerciseDetailActivity", "JSON parsing error: " + e.getMessage());
+                        Log.e("ExerciseDetailActivity", "Response received: " + response); // Log the raw response
+                        Toast.makeText(this, "Invalid response from server", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    Log.e("ExerciseDetailActivity", "Volley Error: " + error.getMessage());
+                    Toast.makeText(this, "An error occurred. Please try again.", Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("username", username);
+                params.put("exercise_name", name); // Ensure this is fetched correctly
+                params.put("sets", sets);
+                params.put("reps", reps);
+                params.put("date", currentDate);
+                return params;
+            }
+        };
+
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
+    }
+
 
     private void updateExerciseCount() {
         String url = "https://calestechsync.dermocura.net/calestechsync/update_exercise_count.php";
@@ -164,7 +236,6 @@ public class ExerciseDetailActivity extends AppCompatActivity {
                 return params;
             }
         };
-
 
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(stringRequest);
