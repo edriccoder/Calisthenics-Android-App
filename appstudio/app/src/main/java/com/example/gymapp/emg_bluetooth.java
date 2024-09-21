@@ -23,6 +23,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -60,6 +61,7 @@ public class emg_bluetooth extends AppCompatActivity {
         connectBluetoothButton = findViewById(R.id.connectBluetoothButton);
         emgLevelGauge = findViewById(R.id.emgLevelGauge);
         emgValueText = findViewById(R.id.emgValueText);
+        ImageView bodyFocusImage = findViewById(R.id.imageView6);
 
         boolean hideButton = getIntent().getBooleanExtra("hide_button", false);
         if (hideButton) {
@@ -92,6 +94,32 @@ public class emg_bluetooth extends AppCompatActivity {
                 }
             }
         });
+
+        String focus = getIntent().getStringExtra("focus");
+
+        // Change image drawable based on the body focus
+        if (focus != null) {
+            switch (focus) {
+                case "Arms":
+                    bodyFocusImage.setImageResource(R.drawable.arm);
+                    break;
+                case "Chest":
+                    bodyFocusImage.setImageResource(R.drawable.arm);
+                    break;
+                case "Abs":
+                    bodyFocusImage.setImageResource(R.drawable.emgcore);
+                    break;
+                case "Legs":
+                    bodyFocusImage.setImageResource(R.drawable.emglegs);
+                    break;
+                case "Back":
+                    bodyFocusImage.setImageResource(R.drawable.arm);
+                    break;
+                default:
+                    bodyFocusImage.setImageResource(R.drawable.abs);
+                    break;
+            }
+        }
     }
 
     private void requestBluetoothEnable() {
@@ -242,7 +270,7 @@ public class emg_bluetooth extends AppCompatActivity {
                             progress = 0;
                     }
 
-                    emgValueText.setText("EMG Level: " + emgLevelText);
+                    emgValueText.setText("Stress Level: " + emgLevelText);
                     emgLevelGauge.setProgress(progress);
                 });
             }

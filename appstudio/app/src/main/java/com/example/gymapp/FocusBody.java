@@ -69,8 +69,10 @@ public class FocusBody extends AppCompatActivity {
             }
         });
 
+        // Change the focus to pass the raw value
         emgBut.setOnClickListener(v -> {
             Intent intent1 = new Intent(FocusBody.this, emg_bluetooth.class);
+            intent1.putExtra("focus", focusBody);  // Pass the raw focusBody string
             startActivity(intent1);
         });
 
@@ -180,5 +182,4 @@ public class FocusBody extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
 }
