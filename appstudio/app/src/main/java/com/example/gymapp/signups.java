@@ -2,8 +2,6 @@ package com.example.gymapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
@@ -15,12 +13,11 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.vishnusivadas.advanced_httpurlconnection.PutData;
-
 public class signups extends AppCompatActivity {
     Button login, butNext;
     EditText signupName, signupEmail, signupPassword, signupUsername;
-    TextView error;
+    CheckBox termsCheckbox;
+    TextView error, termsText;
 
     public static class Globals {
         public static String username;
@@ -36,7 +33,21 @@ public class signups extends AppCompatActivity {
         signupPassword = findViewById(R.id.password);
         signupUsername = findViewById(R.id.username);
         error = findViewById(R.id.error);
+        termsCheckbox = findViewById(R.id.termsCheckbox);
+        termsText = findViewById(R.id.termsText);
 
+        // Make the Terms and Conditions text clickable to open a dialog
+        termsText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Show the Terms and Conditions dialog
+                TermsAndConditionsDialog dialog = new TermsAndConditionsDialog(signups.this);
+                dialog.setCancelable(true);
+                dialog.show();
+            }
+        });
+
+        // Toggle password visibility
         CheckBox passwordToggle = findViewById(R.id.passwordToggle);
         passwordToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -49,6 +60,7 @@ public class signups extends AppCompatActivity {
             }
         });
 
+        // Handle the Sign-up process
         butNext = findViewById(R.id.next);
         butNext.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,15 +71,13 @@ public class signups extends AppCompatActivity {
                     String password = String.valueOf(signupPassword.getText());
                     Globals.username = String.valueOf(signupUsername.getText());
 
+                    // Proceed to next activity (OTP Verification)
                     Intent intent = new Intent(signups.this, OtpActivity.class);
                     intent.putExtra("name", name);
                     intent.putExtra("email", email);
                     intent.putExtra("password", password);
                     intent.putExtra("username", Globals.username);
                     startActivity(intent);
-
-
-
                 } else {
                     error.setVisibility(View.VISIBLE);
                     error.setText("All fields required!");
@@ -75,6 +85,7 @@ public class signups extends AppCompatActivity {
             }
         });
 
+        // Handle login click
         login = findViewById(R.id.button3);
         login.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -84,6 +95,7 @@ public class signups extends AppCompatActivity {
         });
     }
 
+    // Check if all fields are filled
     private boolean isAllFieldsFilled() {
         return !signupName.getText().toString().isEmpty() &&
                 !signupEmail.getText().toString().isEmpty() &&
