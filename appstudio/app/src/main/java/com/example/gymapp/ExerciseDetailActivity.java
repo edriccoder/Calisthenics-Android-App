@@ -73,7 +73,9 @@ public class ExerciseDetailActivity extends AppCompatActivity {
 
         emgBut.setOnClickListener(v -> {
             Intent intent1 = new Intent(ExerciseDetailActivity.this, emg_bluetooth.class);
-            intent1.putExtra("hide_button", true); // Pass flag to hide button
+            intent1.putExtra("hide_button", true);
+            intent1.putExtra("hide_image", true);
+            intent1.putExtra("show_serial", true);
             startActivity(intent1);
         });
 

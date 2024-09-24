@@ -16,6 +16,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.ParcelUuid;
@@ -30,6 +31,14 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.utils.EntryXComparator;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,6 +61,12 @@ public class emg_bluetooth extends AppCompatActivity {
     private Button connectBluetoothButton;
     private ProgressBar emgLevelGauge;
 
+    private LineChart emgLineChart;
+    private LineData lineData;
+    private LineDataSet lineDataSet;
+    private ArrayList<Entry> emgEntries = new ArrayList<>();
+    private int timeIndex = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +81,11 @@ public class emg_bluetooth extends AppCompatActivity {
         boolean hideButton = getIntent().getBooleanExtra("hide_button", false);
         if (hideButton) {
             connectBluetoothButton.setVisibility(View.GONE); // Hide the button
+        }
+
+        boolean hideimage = getIntent().getBooleanExtra("hide_image", false);
+        if (hideimage) {
+            bodyFocusImage.setVisibility(View.GONE); // Hide the image
         }
 
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -96,8 +116,6 @@ public class emg_bluetooth extends AppCompatActivity {
         });
 
         String focus = getIntent().getStringExtra("focus");
-
-        // Change image drawable based on the body focus
         if (focus != null) {
             switch (focus) {
                 case "Arms":
@@ -107,20 +125,66 @@ public class emg_bluetooth extends AppCompatActivity {
                     bodyFocusImage.setImageResource(R.drawable.arm);
                     break;
                 case "Abs":
-                    bodyFocusImage.setImageResource(R.drawable.emgcore);
+                    bodyFocusImage.setImageResource(R.drawable.abs);
                     break;
                 case "Legs":
-                    bodyFocusImage.setImageResource(R.drawable.emglegs);
+                    bodyFocusImage.setImageResource(R.drawable.legs);
                     break;
                 case "Back":
                     bodyFocusImage.setImageResource(R.drawable.arm);
                     break;
                 default:
-                    bodyFocusImage.setImageResource(R.drawable.abs);
+                    bodyFocusImage.setImageResource(R.drawable.backbody);
                     break;
             }
         }
+
+        emgLineChart = findViewById(R.id.emgLineChart);
+        lineDataSet = new LineDataSet(emgEntries, "EMG Values");
+        lineDataSet.setColor(Color.BLUE);
+        lineDataSet.setLineWidth(2f);
+        lineDataSet.setDrawCircles(false);
+        lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER); // Smooth curve
+        lineData = new LineData(lineDataSet);
+        emgLineChart.setData(lineData);
+        emgLineChart.getDescription().setEnabled(false);
+        emgLineChart.getLegend().setEnabled(false);
+        emgLineChart.setTouchEnabled(false);
+        emgLineChart.setDragEnabled(false);
+        emgLineChart.setScaleEnabled(false);
+
     }
+
+    private void updateChart(float emgValue) {
+        // Ensure the value is valid (between 0 and 4095, the 12-bit range from Arduino)
+        if (emgValue < 0 || emgValue > 4095) {
+            Log.e("ChartError", "Invalid EMG value: " + emgValue);
+            return;  // Skip invalid values
+        }
+
+        // Add the new value to the chart
+        emgEntries.add(new Entry(timeIndex++, emgValue));
+
+        // Limit the number of entries to avoid overwhelming the chart
+        if (emgEntries.size() > 100) {
+            emgEntries.remove(0);  // Remove the oldest entry
+        }
+
+        // Notify the chart about the updated data
+        lineDataSet.notifyDataSetChanged();
+        lineData.notifyDataChanged();
+        emgLineChart.notifyDataSetChanged();
+
+        // Ensure that we only scroll if the number of entries is greater than a threshold
+        if (emgEntries.size() > 100) {
+            emgLineChart.moveViewToX(lineData.getEntryCount() - 100);  // Keep the last 100 entries visible
+        }
+
+        // Refresh the chart to show updated data
+        emgLineChart.invalidate();
+        Log.d(TAG, "Updating chart with EMG Value: " + emgValue);
+    }
+
 
     private void requestBluetoothEnable() {
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -240,40 +304,65 @@ public class emg_bluetooth extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             if (EMG_VALUE_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
-                final int emgLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                Log.d(TAG, "onCharacteristicChanged triggered with EMG level: " + emgLevel);
+                String emgData = characteristic.getStringValue(0);  // Format: "EMGVal,EMGLevel"
+                String[] parts = emgData.split(",");
 
-                runOnUiThread(() -> {
-                    Log.d(TAG, "Updating UI with EMG level: " + emgLevel);
-                    String emgLevelText;
-                    int progress;
+                if (parts.length == 2) {
+                    try {
+                        int emgVal = Integer.parseInt(parts[0]);  // Raw EMG value
+                        int emgLevel = Integer.parseInt(parts[1]);  // EMG level (0-3)
 
-                    switch (emgLevel) {
-                        case 0:
-                            emgLevelText = "Below Easy";
-                            progress = 0;
-                            break;
-                        case 1:
-                            emgLevelText = "Easy";
-                            progress = 33;
-                            break;
-                        case 2:
-                            emgLevelText = "Medium";
-                            progress = 66;
-                            break;
-                        case 3:
-                            emgLevelText = "Hard";
-                            progress = 100;
-                            break;
-                        default:
-                            emgLevelText = "Unknown";
-                            progress = 0;
+                        // Ensure values are within expected ranges before updating the UI
+                        if (emgVal >= 0 && emgVal <= 4095 && emgLevel >= 0 && emgLevel <= 3) {
+                            runOnUiThread(() -> {
+                                // Update the UI in real-time based on the parsed EMG value and level
+                                updateUI(emgVal, emgLevel);
+                            });
+                        } else {
+                            Log.e("EMGDataError", "Invalid EMG values: EMGVal = " + emgVal + ", EMGLevel = " + emgLevel);
+                        }
+                    } catch (NumberFormatException e) {
+                        Log.e("EMGDataError", "Error parsing EMG data: " + emgData, e);
                     }
-
-                    emgValueText.setText("Stress Level: " + emgLevelText);
-                    emgLevelGauge.setProgress(progress);
-                });
+                } else {
+                    Log.e("EMGDataError", "Invalid EMG data format: " + emgData);
+                }
             }
+        }
+
+        private void updateUI(int emgVal, int emgLevel) {
+            // Update the EMG Value Text and Gauge based on the EMG level
+            String emgLevelText;
+            int progress;
+
+            switch (emgLevel) {
+                case 0:
+                    emgLevelText = "Below Easy";
+                    progress = 0;
+                    break;
+                case 1:
+                    emgLevelText = "Easy";
+                    progress = 33;
+                    break;
+                case 2:
+                    emgLevelText = "Medium";
+                    progress = 66;
+                    break;
+                case 3:
+                    emgLevelText = "Hard";
+                    progress = 100;
+                    break;
+                default:
+                    emgLevelText = "Unknown";
+                    progress = 0;
+            }
+
+            // Update UI elements for EMG level and gauge
+            emgValueText.setText("Stress Level: " + emgLevelText);
+            emgLevelGauge.setProgress(progress);
+
+            // Update the chart with the new EMG value
+            updateChart(emgVal);
         }
     };
 }
