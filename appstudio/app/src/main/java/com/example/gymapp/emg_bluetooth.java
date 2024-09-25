@@ -1,6 +1,7 @@
 package com.example.gymapp;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -22,6 +23,7 @@ import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -66,6 +68,8 @@ public class emg_bluetooth extends AppCompatActivity {
     private LineDataSet lineDataSet;
     private ArrayList<Entry> emgEntries = new ArrayList<>();
     private int timeIndex = 0;
+    private int stressScore = 0;
+    private int stressThreshold = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -208,7 +212,7 @@ public class emg_bluetooth extends AppCompatActivity {
     private void startScan() {
         if (hasBluetoothPermissions()) {
             try {
-                bluetoothLeScanner.startScan(scanCallback);
+                 bluetoothLeScanner.startScan(scanCallback);
                 bluetoothStatusText.setText("Scanning for devices...");
             } catch (SecurityException e) {
                 Log.e(TAG, "Bluetooth scan permission not granted", e);
@@ -304,7 +308,7 @@ public class emg_bluetooth extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             if (EMG_VALUE_CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
-                String emgData = characteristic.getStringValue(0);  // Format: "EMGVal,EMGLevel"
+                String emgData = characteristic.getStringValue(0);  // Data format: "EMGVal,EMGLevel"
                 String[] parts = emgData.split(",");
 
                 if (parts.length == 2) {
@@ -312,10 +316,10 @@ public class emg_bluetooth extends AppCompatActivity {
                         int emgVal = Integer.parseInt(parts[0]);  // Raw EMG value
                         int emgLevel = Integer.parseInt(parts[1]);  // EMG level (0-3)
 
-                        // Ensure values are within expected ranges before updating the UI
+                        // Check if values are in expected range
                         if (emgVal >= 0 && emgVal <= 4095 && emgLevel >= 0 && emgLevel <= 3) {
                             runOnUiThread(() -> {
-                                // Update the UI in real-time based on the parsed EMG value and level
+                                // Update the UI based on the parsed EMG value and level
                                 updateUI(emgVal, emgLevel);
                             });
                         } else {
@@ -331,10 +335,10 @@ public class emg_bluetooth extends AppCompatActivity {
         }
 
         private void updateUI(int emgVal, int emgLevel) {
-            // Update the EMG Value Text and Gauge based on the EMG level
             String emgLevelText;
             int progress;
 
+            // Determine text and progress for the gauge based on EMG level
             switch (emgLevel) {
                 case 0:
                     emgLevelText = "Below Easy";
@@ -357,12 +361,46 @@ public class emg_bluetooth extends AppCompatActivity {
                     progress = 0;
             }
 
-            // Update UI elements for EMG level and gauge
+            // Update the text and gauge UI components
             emgValueText.setText("Stress Level: " + emgLevelText);
             emgLevelGauge.setProgress(progress);
 
             // Update the chart with the new EMG value
             updateChart(emgVal);
+
+            stressScore += emgLevel;
+
+            // Check if the stress score exceeds the threshold
+            if (stressScore >= stressThreshold) {
+                showWarningDialog();
+                stressScore = 0;  // Reset the stress score after showing the dialog
+            }
         }
+
+        private void showWarningDialog() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(emg_bluetooth.this);
+            LayoutInflater inflater = getLayoutInflater();
+
+            // Inflate the custom layout for the dialog
+            View dialogLayout = inflater.inflate(R.layout.dialog_warning, null);
+            builder.setView(dialogLayout);
+
+            // Find the ImageView and set a warning image
+            ImageView warningImage = dialogLayout.findViewById(R.id.warningImage);
+            warningImage.setImageResource(R.drawable.warning_icon);  // Replace with your warning image resource
+
+            // Set dialog title and message
+            builder.setTitle("Warning: High Stress");
+            builder.setMessage("Muscle stress is too high. Please take a rest for at least 5 minutes.");
+
+            // Add an "OK" button to dismiss the dialog
+            builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+
+            // Show the dialog
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+
+
     };
 }
