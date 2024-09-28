@@ -44,7 +44,7 @@ public class weight extends AppCompatActivity {
                         Toast.makeText(weight.this, bmiResult, Toast.LENGTH_SHORT).show();
 
                         if (bmiResult.equals("BMI Created Successfully")) {
-                            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                            Intent intent = new Intent(getApplicationContext(), generate_week.class);
                             startActivity(intent);
                             generateExercisePlan(username);
                         }
