@@ -83,7 +83,21 @@ public class home extends Fragment {
         recyclerViewFocusAreas = view.findViewById(R.id.recyclerViewFocusAreas);
         recyclerViewFocusAreas.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         weeklyPlanList = new ArrayList<>();
-        adapterWeek = new WeeklyPlanAdapter(getContext(), weeklyPlanList);
+        // Set up the RecyclerView adapter in the home fragment
+        adapterWeek = new WeeklyPlanAdapter(getContext(), weeklyPlanList, new WeeklyPlanAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(int count) {
+                // Create an intent to start the weekly_generate activity
+                Intent intent = new Intent(getContext(), weekly_generate.class);
+
+                // Pass the count value to the next activity
+                intent.putExtra("count", count);
+
+                // Start the activity
+                startActivity(intent);
+            }
+        });
+
         recyclerViewFocusAreas.setAdapter(adapterWeek);
 
         requestQueue = Volley.newRequestQueue(getContext());

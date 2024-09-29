@@ -17,10 +17,13 @@ public class WeeklyPlanAdapter extends RecyclerView.Adapter<WeeklyPlanAdapter.We
 
     private ArrayList<WeeklyPlan> weeklyPlanList;
     private Context context;
+    private OnItemClickListener listener;
 
-    public WeeklyPlanAdapter(Context context, ArrayList<WeeklyPlan> list) {
+    // Constructor modified to accept a listener
+    public WeeklyPlanAdapter(Context context, ArrayList<WeeklyPlan> list, OnItemClickListener listener) {
         this.context = context;
         this.weeklyPlanList = list;
+        this.listener = listener;
     }
 
     @NonNull
@@ -35,11 +38,23 @@ public class WeeklyPlanAdapter extends RecyclerView.Adapter<WeeklyPlanAdapter.We
         WeeklyPlan weeklyPlan = weeklyPlanList.get(position);
         holder.dayTextView.setText(weeklyPlan.getDay());
         holder.statusTextView.setText(weeklyPlan.getStatus());
+
+        // Set click listener to pass the count to the activity
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(weeklyPlan.getCount());
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
         return weeklyPlanList.size();
+    }
+
+    // Interface for handling item clicks
+    public interface OnItemClickListener {
+        void onItemClick(int count);
     }
 
     public static class WeeklyPlanViewHolder extends RecyclerView.ViewHolder {
@@ -52,3 +67,4 @@ public class WeeklyPlanAdapter extends RecyclerView.Adapter<WeeklyPlanAdapter.We
         }
     }
 }
+
