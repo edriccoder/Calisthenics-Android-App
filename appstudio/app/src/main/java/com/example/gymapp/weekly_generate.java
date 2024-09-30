@@ -1,10 +1,12 @@
 package com.example.gymapp;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,6 +37,7 @@ public class weekly_generate extends AppCompatActivity {
 
         listViewExercises = findViewById(R.id.listViewExercises);
         exerciseList = new ArrayList<>();
+        Button buttonStartFirstExercise = findViewById(R.id.buttonStartFirstExercise);
         adapter = new ExerciseAdapter(this, exerciseList); // Initialize the adapter
         listViewExercises.setAdapter(adapter); // Set the adapter to ListView
 
@@ -53,6 +56,18 @@ public class weekly_generate extends AppCompatActivity {
             return;
         }
         Log.e("WeeklyGenerateActivity", "Count: " + count);
+
+        buttonStartFirstExercise.setOnClickListener(v -> {
+            if (!exerciseList.isEmpty()) {
+                // Start the ExerciseDetailActivity with the first item in the list
+                Intent intent = new Intent(weekly_generate.this, ExerciseDetailActivity.class);
+                intent.putExtra("exerciseList", exerciseList);  // Pass the full list of exercises
+                intent.putExtra("currentPosition", 0);  // Start with the first exercise
+                startActivity(intent);
+            } else {
+                Toast.makeText(weekly_generate.this, "No exercises available to start.", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         fetchExercises(username, count);
     }
@@ -128,7 +143,7 @@ public class weekly_generate extends AppCompatActivity {
                     .into(new SimpleTarget<Bitmap>() {
                         @Override
                         public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
-                            saveImageToStorage(resource, exercise); // Save the image to storage
+                            saveImageToStorage(resource, exercise);
                         }
                     });
         }
@@ -139,10 +154,10 @@ public class weekly_generate extends AppCompatActivity {
         if (!directory.exists()) {
             directory.mkdirs();
         }
-        File file = new File(directory, exercise.getExName() + ".png"); // Change name as needed
+        File file = new File(directory, exercise.getExName() + ".png");
         try (FileOutputStream out = new FileOutputStream(file)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-            exercise.setLocalImagePath(file.getAbsolutePath()); // Set the local image path
+            exercise.setLocalImagePath(file.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
             Log.e("SaveImage", "Error saving image: " + e.getMessage());

@@ -10,6 +10,10 @@
         <item>cm</item>
         <item>ft</item>
     </string-array>
+    <string-array name="exercise_units">
+        <item>exercise</item>
+        <item>rest</item>
+    </string-array>
     <string-array name="week_days_array">
         <item>1</item>
         <item>2</item>

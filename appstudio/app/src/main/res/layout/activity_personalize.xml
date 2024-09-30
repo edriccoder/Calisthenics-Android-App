@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".personalize"
+    tools:layout_editor_absoluteX="0dp"
+    tools:layout_editor_absoluteY="49dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView3"
+        android:layout_width="300dp"
+        android:layout_height="500dp"
+        app:cardCornerRadius="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.385">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/Monday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Monday"
+                android:textColor="@color/black" />
+
+            <Spinner
+                android:id="@+id/exerciseMonday"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:entries="@array/exercise_units" />
+
+            <TextView
+                android:id="@+id/Tuesday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tuesday"
+                android:textColor="@color/black" />
+
+            <Spinner
+                android:id="@+id/exerciseTuesday"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:entries="@array/exercise_units" />
+
+            <TextView
+                android:id="@+id/Wednesday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Wednesday"
+                android:textColor="@color/black" />
+
+            <Spinner
+                android:id="@+id/exerciseWednesday"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:entries="@array/exercise_units" />
+
+            <TextView
+                android:id="@+id/Thursday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Thursday"
+                android:textColor="@color/black" />
+
+            <Spinner
+                android:id="@+id/exerciseThursday"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:entries="@array/exercise_units" />
+
+            <TextView
+                android:id="@+id/Friday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Friday"
+                android:textColor="@color/black" />
+
+            <Spinner
+                android:id="@+id/exerciseFriday"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:entries="@array/exercise_units" />
+
+            <TextView
+                android:id="@+id/Saturday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Saturday"
+                android:textColor="@color/black" />
+
+            <Spinner
+                android:id="@+id/exerciseSaturday"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:entries="@array/exercise_units" />
+
+            <TextView
+                android:id="@+id/Sunday"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sunday"
+                android:textColor="@color/black" />
+
+            <Spinner
+                android:id="@+id/exerciseSunday"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:entries="@array/exercise_units" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <Button
+        android:id="@+id/done"
+        android:layout_width="317dp"
+        android:layout_height="51dp"
+        android:background="@drawable/edi_shape"
+        android:backgroundTint="#000000"
+        android:text="Done"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/cardView3" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
