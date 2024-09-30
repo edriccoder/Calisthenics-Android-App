@@ -33,31 +33,28 @@ public class weekly_generate extends AppCompatActivity {
         String username = MainActivity.GlobalsLogin.username;
         Log.e("Username", "Username: " + username);
         int count = getIntent().getIntExtra("count", -1);
-        Log.e("WeeklyGenerateActivity", "Count: " + count); // Log the count with an error log level
+        Log.e("WeeklyGenerateActivity", "Count: " + count);
 
-        // Check if count is valid
         if (count != -1) {
-            fetchExercises(username, String.valueOf(count)); // Pass count as String
+            fetchExercises(username, String.valueOf(count)); // Ensure count is passed as String
         } else {
             Toast.makeText(this, "Invalid exercise day", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void fetchExercises(String username, String exerciseDay) { // Change parameter type to String
+    private void fetchExercises(String username, String exerciseDay) {
         String url = "https://calestechsync.dermocura.net/calestechsync/get_weeklyGoal.php";
 
-        // Creating a JSON request to send data
         JSONObject requestParams = new JSONObject();
         try {
             requestParams.put("username", username);
-            requestParams.put("exercise_day", exerciseDay); // Ensure this is a string
-            Log.d("Request Params", requestParams.toString()); // Log the request parameters
+            requestParams.put("exercise_day", exerciseDay);
+            Log.d("Request Params", requestParams.toString());
         } catch (JSONException e) {
             e.printStackTrace();
-            return; // Exit if JSON creation fails
+            return;
         }
 
-        // Volley request
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Request.Method.POST,
@@ -66,13 +63,12 @@ public class weekly_generate extends AppCompatActivity {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Log.d("Volley Response", response.toString()); // Log the response
+                        Log.d("Volley Response", response.toString());
                         try {
                             if (response.getBoolean("success")) {
                                 JSONArray exercises = response.optJSONArray("data");
 
                                 if (exercises != null && exercises.length() > 0) {
-                                    // Loop through the JSON array and add to exercise list
                                     for (int i = 0; i < exercises.length(); i++) {
                                         JSONObject exerciseObj = exercises.getJSONObject(i);
 
@@ -85,7 +81,6 @@ public class weekly_generate extends AppCompatActivity {
                                         exerciseList.add(exercise);
                                     }
 
-                                    // Set up the adapter and bind the data
                                     adapter = new ExerciseAdapter(weekly_generate.this, exerciseList);
                                     listViewExercises.setAdapter(adapter);
                                 } else {
@@ -98,21 +93,16 @@ public class weekly_generate extends AppCompatActivity {
                             e.printStackTrace();
                             Toast.makeText(weekly_generate.this, "Data parsing error", Toast.LENGTH_SHORT).show();
                         }
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                Log.e("Volley Error", error.toString()); // Log the error
-                                String rawResponse = new String(error.networkResponse.data); // Log the raw response
-                                Log.e("Raw Response", rawResponse);
-                                Toast.makeText(weekly_generate.this, "Failed to fetch data", Toast.LENGTH_SHORT).show();
-                            }
-                        };
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e("Volley Error", error.toString()); // Log the error
+                        Log.e("Volley Error", error.toString());
+                        if (error.networkResponse != null) {
+                            String rawResponse = new String(error.networkResponse.data);
+                            Log.e("Raw Response", rawResponse);
+                        }
                         Toast.makeText(weekly_generate.this, "Failed to fetch data", Toast.LENGTH_SHORT).show();
                     }
                 }
