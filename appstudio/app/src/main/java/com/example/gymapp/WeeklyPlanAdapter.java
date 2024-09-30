@@ -54,7 +54,7 @@ public class WeeklyPlanAdapter extends RecyclerView.Adapter<WeeklyPlanAdapter.We
 
     // Interface for handling item clicks
     public interface OnItemClickListener {
-        void onItemClick(int count);
+        void onItemClick(String count);
     }
 
     public static class WeeklyPlanViewHolder extends RecyclerView.ViewHolder {

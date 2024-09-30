@@ -86,14 +86,12 @@ public class home extends Fragment {
         // Set up the RecyclerView adapter in the home fragment
         adapterWeek = new WeeklyPlanAdapter(getContext(), weeklyPlanList, new WeeklyPlanAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(int count) {
-                // Create an intent to start the weekly_generate activity
+            public void onItemClick(String count) {
+
                 Intent intent = new Intent(getContext(), weekly_generate.class);
 
-                // Pass the count value to the next activity
                 intent.putExtra("count", count);
 
-                // Start the activity
                 startActivity(intent);
             }
         });
@@ -222,7 +220,7 @@ public class home extends Fragment {
                                 JSONObject jsonObject = weeklyPlanArray.getJSONObject(i);
                                 String day = jsonObject.getString("day");
                                 String status = jsonObject.getString("status");
-                                int count = jsonObject.getInt("count");
+                                String count = jsonObject.getString("count");
 
                                 weeklyPlanList.add(new WeeklyPlan(day, status, count));
                             }

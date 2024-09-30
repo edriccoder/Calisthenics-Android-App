@@ -3,9 +3,9 @@ package com.example.gymapp;
 public class WeeklyPlan {
     private String day;
     private String status;
-    private int count;
+    private String count;
 
-    public WeeklyPlan(String day, String status, int count) {
+    public WeeklyPlan(String day, String status, String count) {
         this.day = day;
         this.status = status;
         this.count = count;
@@ -19,7 +19,5 @@ public class WeeklyPlan {
         return status;
     }
 
-    public int getCount() {
-        return count;
-    }
+    public String getCount() { return count; }
 }

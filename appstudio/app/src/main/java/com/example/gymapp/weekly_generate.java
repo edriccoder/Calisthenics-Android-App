@@ -1,19 +1,25 @@
 package com.example.gymapp;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.ListView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
+import com.vishnusivadas.advanced_httpurlconnection.PutData;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class weekly_generate extends AppCompatActivity {
@@ -29,85 +35,117 @@ public class weekly_generate extends AppCompatActivity {
 
         listViewExercises = findViewById(R.id.listViewExercises);
         exerciseList = new ArrayList<>();
+        adapter = new ExerciseAdapter(this, exerciseList); // Initialize the adapter
+        listViewExercises.setAdapter(adapter); // Set the adapter to ListView
 
         String username = MainActivity.GlobalsLogin.username;
+        if (username == null || username.isEmpty()) {
+            Log.e("Username Error", "Username is null or empty");
+            Toast.makeText(this, "Username is missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Log.e("Username", "Username: " + username);
-        int count = getIntent().getIntExtra("count", -1);
+
+        String count = getIntent().getStringExtra("count");
+        if (count == null || count.isEmpty()) {
+            Log.e("Count Error", "Exercise day (count) is null or empty");
+            Toast.makeText(this, "Exercise day is missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
         Log.e("WeeklyGenerateActivity", "Count: " + count);
 
-        if (count != -1) {
-            fetchExercises(username, String.valueOf(count)); // Ensure count is passed as String
-        } else {
-            Toast.makeText(this, "Invalid exercise day", Toast.LENGTH_SHORT).show();
+        fetchExercises(username, count);
+    }
+
+    private void fetchExercises(String username, String count) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            String[] field = new String[2]; // Changed size to 2
+            field[0] = "username";
+            field[1] = "exercise_day";
+
+            String[] data = new String[2]; // Changed size to 2
+            data[0] = username;
+            data[1] = count;
+
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/get_weeklyGoal.php", "POST", field, data);
+            if (putData.startPut()) {
+                if (putData.onComplete()) {
+                    String result = putData.getResult();
+                    Log.d("FetchExercises", "Full Response: " + result);
+                    parseExercises(result);
+                } else {
+                    Toast.makeText(weekly_generate.this, "Error: Could not complete the request.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void parseExercises(String jsonData) {
+        Log.d("ParseExercises", "JSON Data: " + jsonData);
+
+        try {
+            JSONObject jsonObject = new JSONObject(jsonData);
+            if (jsonObject.has("error")) {
+                String errorMessage = jsonObject.getString("error");
+                Toast.makeText(weekly_generate.this, errorMessage, Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if (jsonObject.has("data")) {
+                JSONArray exercisesArray = jsonObject.getJSONArray("data");
+
+                exerciseList.clear(); // Clear the existing list
+                for (int i = 0; i < exercisesArray.length(); i++) {
+                    JSONObject exerciseObject = exercisesArray.getJSONObject(i);
+
+                    String exName = exerciseObject.getString("exercise_name");
+                    String exDesc = exerciseObject.getString("exdesc");
+                    String exImg = exerciseObject.getString("eximg");
+                    String activityValue = exerciseObject.getString("activity_goal");
+
+                    Exercise2 exercise = new Exercise2(exName, exDesc, exImg, activityValue);
+                    downloadAndSaveImage(exercise); // Download and save the image
+                    exerciseList.add(exercise);
+                }
+
+                runOnUiThread(() -> adapter.notifyDataSetChanged()); // Notify the adapter
+            } else {
+                Log.d("ParseExercises", "No exercises key in JSON.");
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(weekly_generate.this, "JSON parsing error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void fetchExercises(String username, String exerciseDay) {
-        String url = "https://calestechsync.dermocura.net/calestechsync/get_weeklyGoal.php";
-
-        JSONObject requestParams = new JSONObject();
-        try {
-            requestParams.put("username", username);
-            requestParams.put("exercise_day", exerciseDay);
-            Log.d("Request Params", requestParams.toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return;
+    private void downloadAndSaveImage(Exercise2 exercise) {
+        String imageUrl = exercise.getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .asBitmap()
+                    .load(imageUrl)
+                    .into(new SimpleTarget<Bitmap>() {
+                        @Override
+                        public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                            saveImageToStorage(resource, exercise); // Save the image to storage
+                        }
+                    });
         }
+    }
 
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
-                Request.Method.POST,
-                url,
-                requestParams,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.d("Volley Response", response.toString());
-                        try {
-                            if (response.getBoolean("success")) {
-                                JSONArray exercises = response.optJSONArray("data");
-
-                                if (exercises != null && exercises.length() > 0) {
-                                    for (int i = 0; i < exercises.length(); i++) {
-                                        JSONObject exerciseObj = exercises.getJSONObject(i);
-
-                                        Exercise2 exercise = new Exercise2(
-                                                exerciseObj.getString("exercise_name"),
-                                                exerciseObj.getString("exdesc"),
-                                                exerciseObj.getString("eximg"),
-                                                exerciseObj.getString("activity_goal")
-                                        );
-                                        exerciseList.add(exercise);
-                                    }
-
-                                    adapter = new ExerciseAdapter(weekly_generate.this, exerciseList);
-                                    listViewExercises.setAdapter(adapter);
-                                } else {
-                                    Toast.makeText(weekly_generate.this, "No exercises found", Toast.LENGTH_SHORT).show();
-                                }
-                            } else {
-                                Toast.makeText(weekly_generate.this, response.getString("message"), Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            Toast.makeText(weekly_generate.this, "Data parsing error", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e("Volley Error", error.toString());
-                        if (error.networkResponse != null) {
-                            String rawResponse = new String(error.networkResponse.data);
-                            Log.e("Raw Response", rawResponse);
-                        }
-                        Toast.makeText(weekly_generate.this, "Failed to fetch data", Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-
-        requestQueue.add(jsonObjectRequest);
+    private void saveImageToStorage(Bitmap bitmap, Exercise2 exercise) {
+        File directory = new File(getExternalFilesDir(null), "MyAppImages");
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        File file = new File(directory, exercise.getExName() + ".png"); // Change name as needed
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            exercise.setLocalImagePath(file.getAbsolutePath()); // Set the local image path
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.e("SaveImage", "Error saving image: " + e.getMessage());
+        }
     }
 }
