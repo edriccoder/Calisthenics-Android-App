@@ -17,7 +17,7 @@ public class startup extends AppCompatActivity {
         Button button = (Button) findViewById(R.id.button1);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), personalize.class);
+                Intent intent = new Intent(getApplicationContext(), personalizeExercise.class);
                 startActivity(intent);
             }
         });

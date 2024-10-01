@@ -30,7 +30,8 @@
                 android:id="@+id/exerciseNameTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"  android:textColor="#000000"
+                android:layout_marginTop="8dp"
+                android:textColor="#000000"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -52,6 +53,15 @@
                 android:id="@+id/descriptionTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textSize="14sp" />
+
+            <!-- Add button to add exercise -->
+            <Button
+                android:id="@+id/addButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add"
+                android:layout_marginTop="8dp"
                 android:textSize="14sp" />
         </LinearLayout>
 

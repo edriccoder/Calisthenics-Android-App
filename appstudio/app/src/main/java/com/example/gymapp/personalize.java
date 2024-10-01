@@ -56,8 +56,9 @@ public class personalize extends AppCompatActivity {
                     @Override
                     public void run() {
                         // Fields to send in the POST request
+                        String username = signups.Globals.username;
                         String[] field = {"username", "weeklyPlan"};
-                        String[] data = {"user12345678900", weeklyPlanString};
+                        String[] data = {username, weeklyPlanString};
 
                         PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insert_generateWeekly.php", "POST", field, data);
 

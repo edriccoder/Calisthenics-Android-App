@@ -124,7 +124,7 @@ public class OtpActivity extends AppCompatActivity {
             if (result.equals("Sign Up Success")) {
                 error.setText("Sign Up Success");
                 error.setTextColor(getResources().getColor(R.color.green));
-                Intent intent = new Intent(getApplicationContext(), gender.class);
+                Intent intent = new Intent(getApplicationContext(), choice.class);
                 startActivity(intent);
             } else {
                 error.setText(result);

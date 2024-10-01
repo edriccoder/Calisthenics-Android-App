@@ -21,7 +21,6 @@ import java.util.List;
 public class exercise_list extends AppCompatActivity {
     private ListView listView;
     private exercise_adapter adapter;
-
     private List<Exercise> exerciseList;
     private SearchView searchView;
 
@@ -32,41 +31,40 @@ public class exercise_list extends AppCompatActivity {
 
         listView = findViewById(R.id.listView);
         searchView = findViewById(R.id.searchView);
-
         exerciseList = new ArrayList<>();
 
+        fetchExercises(); // Move the data fetching logic to a separate method
+        setupSearchView();
+    }
+
+    private void fetchExercises() {
         Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String[] field = new String[0];
-                String[] data = new String[0];
+        handler.post(() -> {
+            String[] field = new String[0];
+            String[] data = new String[0];
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getAllExerciseRecords.php", "POST", field, data);
-                if (putData.startPut()) {
-                    if (putData.onComplete()) {
-                        String result = putData.getResult();
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getAllExerciseRecords.php", "POST", field, data);
+            if (putData.startPut()) {
+                if (putData.onComplete()) {
+                    String result = putData.getResult();
+                    try {
+                        exerciseList = getExercises(result);
 
-                        try {
-                            exerciseList = getExercises(result);
-
-                            if (exerciseList != null && !exerciseList.isEmpty()) {
-                                adapter = new exercise_adapter(exercise_list.this, exerciseList);
-                                listView.setAdapter(adapter);
-                            } else {
-                                Toast.makeText(exercise_list.this, "No exercises found", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            Toast.makeText(exercise_list.this, "Error parsing exercise data", Toast.LENGTH_SHORT).show();
+                        if (exerciseList != null && !exerciseList.isEmpty()) {
+                            adapter = new exercise_adapter(exercise_list.this, exerciseList, "user12345678900", "Monday"); // Change exercise day as needed
+                            listView.setAdapter(adapter);
+                        } else {
+                            Toast.makeText(exercise_list.this, "No exercises found", Toast.LENGTH_SHORT).show();
                         }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(exercise_list.this, "Error parsing exercise data", Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    Toast.makeText(exercise_list.this, "Error sending request", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                Toast.makeText(exercise_list.this, "Error sending request", Toast.LENGTH_SHORT).show();
             }
         });
-        setupSearchView();
     }
 
     private ArrayList<Exercise> getExercises(String result) throws JSONException {
@@ -81,7 +79,9 @@ public class exercise_list extends AppCompatActivity {
                 String description = exerciseObject.getString("exdesc");
                 String imageUrl = exerciseObject.getString("eximg");
                 String difficulty = exerciseObject.getString("exdifficulty");
-                Exercise exercise = new Exercise(exerciseName, description, imageUrl, difficulty);
+                String focusBody = exerciseObject.getString("focusbody");
+                String buildMuscle = exerciseObject.optString("buildMuscle", ""); // Use optString to avoid crashes if key is absent
+                Exercise exercise = new Exercise(exerciseName, description, imageUrl, difficulty, focusBody, buildMuscle);
                 exerciseList.add(exercise);
             }
         } catch (JSONException e) {
