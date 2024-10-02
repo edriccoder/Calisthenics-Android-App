@@ -1,5 +1,6 @@
 package com.example.gymapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log; // For logging
 import android.view.View;
@@ -77,6 +78,8 @@ public class personalize extends AppCompatActivity {
 
                                     runOnUiThread(() -> {
                                         Toast.makeText(personalize.this, message, Toast.LENGTH_LONG).show();
+                                        Intent intent = new Intent(getApplicationContext(), personalizeExercise.class);
+                                        startActivity(intent);
                                     });
                                 } catch (Exception e) {
                                     e.printStackTrace();

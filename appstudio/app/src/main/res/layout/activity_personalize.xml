@@ -5,14 +5,31 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="16dp"
     tools:context=".personalize"
     tools:layout_editor_absoluteX="0dp"
     tools:layout_editor_absoluteY="49dp">
 
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
+        android:text="Select the day if you want to exercise or rest"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.051" />
+
     <androidx.cardview.widget.CardView
         android:id="@+id/cardView3"
         android:layout_width="300dp"
-        android:layout_height="500dp"
+        android:layout_height="wrap_content"
         app:cardCornerRadius="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -25,101 +42,178 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <TextView
-                android:id="@+id/Monday"
+            <!-- Monday Row -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Monday"
-                android:textColor="@color/black" />
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-            <Spinner
-                android:id="@+id/exerciseMonday"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:entries="@array/exercise_units" />
+                <TextView
+                    android:id="@+id/Monday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Monday:"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
 
-            <TextView
-                android:id="@+id/Tuesday"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tuesday"
-                android:textColor="@color/black" />
+                <Spinner
+                    android:id="@+id/exerciseMonday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/exercise_units"
+                    android:layout_marginStart="16dp" />
 
-            <Spinner
-                android:id="@+id/exerciseTuesday"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:entries="@array/exercise_units" />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/Wednesday"
+            <!-- Tuesday Row -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Wednesday"
-                android:textColor="@color/black" />
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-            <Spinner
-                android:id="@+id/exerciseWednesday"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:entries="@array/exercise_units" />
+                <TextView
+                    android:id="@+id/Tuesday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tuesday:"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
 
-            <TextView
-                android:id="@+id/Thursday"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Thursday"
-                android:textColor="@color/black" />
+                <Spinner
+                    android:id="@+id/exerciseTuesday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/exercise_units"
+                    android:layout_marginStart="16dp" />
 
-            <Spinner
-                android:id="@+id/exerciseThursday"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:entries="@array/exercise_units" />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/Friday"
+            <!-- Wednesday Row -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Friday"
-                android:textColor="@color/black" />
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-            <Spinner
-                android:id="@+id/exerciseFriday"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:entries="@array/exercise_units" />
+                <TextView
+                    android:id="@+id/Wednesday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wednesday:"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
 
-            <TextView
-                android:id="@+id/Saturday"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Saturday"
-                android:textColor="@color/black" />
+                <Spinner
+                    android:id="@+id/exerciseWednesday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/exercise_units"
+                    android:layout_marginStart="16dp" />
 
-            <Spinner
-                android:id="@+id/exerciseSaturday"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:entries="@array/exercise_units" />
+            </LinearLayout>
 
-            <TextView
-                android:id="@+id/Sunday"
+            <!-- Thursday Row -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Sunday"
-                android:textColor="@color/black" />
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-            <Spinner
-                android:id="@+id/exerciseSunday"
+                <TextView
+                    android:id="@+id/Thursday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thursday:"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <Spinner
+                    android:id="@+id/exerciseThursday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/exercise_units"
+                    android:layout_marginStart="16dp" />
+
+            </LinearLayout>
+
+            <!-- Friday Row -->
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:entries="@array/exercise_units" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/Friday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Friday:"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <Spinner
+                    android:id="@+id/exerciseFriday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/exercise_units"
+                    android:layout_marginStart="16dp" />
+
+            </LinearLayout>
+
+            <!-- Saturday Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/Saturday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Saturday:"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <Spinner
+                    android:id="@+id/exerciseSaturday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/exercise_units"
+                    android:layout_marginStart="16dp" />
+
+            </LinearLayout>
+
+            <!-- Sunday Row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/Sunday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sunday:"
+                    android:textColor="@color/black"
+                    android:textSize="16sp" />
+
+                <Spinner
+                    android:id="@+id/exerciseSunday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:entries="@array/exercise_units"
+                    android:layout_marginStart="16dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
-
     </androidx.cardview.widget.CardView>
 
     <Button
@@ -130,9 +224,11 @@
         android:backgroundTint="#000000"
         android:text="Done"
         android:textColor="@color/white"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cardView3" />
+        app:layout_constraintTop_toBottomOf="@+id/cardView3"
+        android:layout_marginTop="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -9,33 +9,61 @@
     tools:context=".personalizeExercise">
 
 
-    <Spinner
-        android:id="@+id/day"
-        android:layout_width="150dp"
-        android:layout_height="49dp"
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.17"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.048" />
+        app:layout_constraintVertical_bias="0.022">
 
-    <Spinner
-        android:id="@+id/focus"
-        android:layout_width="150dp"
-        android:layout_height="49dp"
-        android:entries="@array/focus"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.867"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.048" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select the day"
+                android:paddingRight="70dp"
+                android:textColor="@color/black"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Focus filter"
+                android:textColor="@color/black"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Spinner
+                android:id="@+id/day"
+                android:layout_width="150dp"
+                android:layout_height="49dp"/>
+
+            <Spinner
+                android:id="@+id/focus"
+                android:layout_width="150dp"
+                android:layout_height="49dp"
+                android:entries="@array/focus" />
+        </LinearLayout>
+    </LinearLayout>
 
     <ListView
         android:id="@+id/listView"
         android:layout_width="match_parent"
-        android:layout_height="630dp"
+        android:layout_height="539dp"
         android:layout_marginTop="8dp"
         android:layout_weight="1"
         android:divider="@drawable/divider"
@@ -43,9 +71,24 @@
         android:padding="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/day"
-        app:layout_constraintVertical_bias="1.0"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.418"
         tools:listitem="@layout/list_item" />
+
+    <Button
+        android:id="@+id/done"
+        android:layout_width="317dp"
+        android:layout_height="51dp"
+        android:layout_marginBottom="28dp"
+        android:background="@drawable/edi_shape"
+        android:backgroundTint="#000000"
+        android:text="Done"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/listView" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,5 +1,6 @@
 package com.example.gymapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -7,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -28,7 +30,9 @@ public class personalizeExercise extends AppCompatActivity {
     private Spinner daySpinner;
     private Spinner focusSpinner;
     private exercise_adapter adapter;
+    private List<DayCount> dayCounts;
     private List<Exercise> exerciseList;
+    Button done;
 
     private static final String TAG = "PersonalizeExercise";  // Tag for logging
 
@@ -42,7 +46,18 @@ public class personalizeExercise extends AppCompatActivity {
         focusSpinner = findViewById(R.id.focus);
 
         exerciseList = new ArrayList<>();
-        fetchExerciseDays();
+        String username = signups.Globals.username;
+        fetchExerciseDays(username);
+
+        done = findViewById(R.id.done);
+
+        done.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(intent);
+            }
+        });
 
         focusSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -57,10 +72,28 @@ public class personalizeExercise extends AppCompatActivity {
             }
         });
 
-        fetchAllExercises();
+        daySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                // Update the selected day count
+                String selectedDayCount = dayCounts.get(position).getCount();
+                if (adapter != null) {
+                    adapter.setExerciseDay(selectedDayCount); // Pass the new day to the adapter
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // Do nothing
+            }
+        });
+
+
+
+        fetchAllExercises(username);
     }
 
-    private void fetchAllExercises() {
+    private void fetchAllExercises(String username) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
@@ -75,8 +108,9 @@ public class personalizeExercise extends AppCompatActivity {
 
                         try {
                             exerciseList = getExercises(result);
-                            adapter = new exercise_adapter(personalizeExercise.this, exerciseList, "user12345678900", daySpinner.getSelectedItem().toString());
-                            listView.setAdapter(adapter);  // Adapter is set here after exercises are fetched
+                            String selectedDayCount = dayCounts.get(daySpinner.getSelectedItemPosition()).getCount();
+                            adapter = new exercise_adapter(personalizeExercise.this, exerciseList, username, selectedDayCount);
+                            listView.setAdapter(adapter);
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing exercise data", e);  // Log error
                             Toast.makeText(personalizeExercise.this, "Error parsing exercise data", Toast.LENGTH_SHORT).show();
@@ -115,13 +149,14 @@ public class personalizeExercise extends AppCompatActivity {
         return exerciseList;
     }
 
-    private void fetchExerciseDays() {
+    private void fetchExerciseDays(String username) {
+        dayCounts = new ArrayList<>(); // Initialize the list to store day and count pairs
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
             public void run() {
                 String[] field = new String[]{"username"};
-                String[] data = new String[]{"user12345678900"};
+                String[] data = new String[]{username};
 
                 PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getGenerateWeek.php", "POST", field, data);
                 if (putData.startPut()) {
@@ -129,14 +164,25 @@ public class personalizeExercise extends AppCompatActivity {
                         String result = putData.getResult();
 
                         try {
-                            ArrayList<String> days = getDaysFromJson(result);
-                            if (days != null && !days.isEmpty()) {
+                            ArrayList<String> days = new ArrayList<>();
+                            JSONArray jsonArray = new JSONArray(result);
+
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                                String day = jsonObject.getString("day");
+                                String count = jsonObject.getString("count");
+                                dayCounts.add(new DayCount(day, count)); // Store day and count together
+                                days.add(day); // Add day for display in the spinner
+                            }
+
+                            if (!days.isEmpty()) {
                                 ArrayAdapter<String> adapter = new ArrayAdapter<>(personalizeExercise.this, android.R.layout.simple_spinner_item, days);
                                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                                 daySpinner.setAdapter(adapter);
                             } else {
                                 Toast.makeText(personalizeExercise.this, "No days found", Toast.LENGTH_SHORT).show();
                             }
+
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing day data", e);  // Log error
                             Toast.makeText(personalizeExercise.this, "Error parsing day data", Toast.LENGTH_SHORT).show();
@@ -148,26 +194,6 @@ public class personalizeExercise extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    private ArrayList<String> getDaysFromJson(String result) throws JSONException {
-        ArrayList<String> days = new ArrayList<>();
-
-        try {
-            JSONArray jsonArray = new JSONArray(result);
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String day = jsonObject.getString("day");
-                String count = jsonObject.getString("count");
-                days.add(day);
-            }
-        } catch (JSONException e) {
-            Log.e(TAG, "Error in JSON data structure for days", e);  // Log error
-            throw e;
-        }
-
-        return days;
     }
 
     private void filterExercisesByFocus(String selectedFocus) {

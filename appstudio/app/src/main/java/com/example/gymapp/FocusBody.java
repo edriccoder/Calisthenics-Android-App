@@ -62,7 +62,8 @@ public class FocusBody extends AppCompatActivity {
                 // Start the ExerciseDetailActivity with the first item in the list
                 Intent intent = new Intent(FocusBody.this, ExerciseDetailActivity.class);
                 intent.putExtra("exerciseList", exercises);  // Pass the full list of exercises
-                intent.putExtra("currentPosition", 0);  // Start with the first exercise
+                intent.putExtra("currentPosition", 0);
+                intent.putExtra("startCountdown", true);  // Start with the first exercise
                 startActivity(intent);
             } else {
                 Toast.makeText(FocusBody.this, "No exercises available to start.", Toast.LENGTH_SHORT).show();
