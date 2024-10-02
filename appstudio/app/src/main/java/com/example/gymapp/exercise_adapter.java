@@ -104,7 +104,7 @@ public class exercise_adapter extends ArrayAdapter<Exercise> {
                     username, exerciseDay, exercise.getExerciseName(),
                     exercise.getDescription(), exercise.getImageUrl(),
                     exercise.getDifficulty(), exercise.getFocusbody(),
-                    exercise.getBuildMuscle() // Assuming "Build Muscle" is the goal, replace if needed
+                    exercise.getBuildMuscle()
             };
 
             PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insertPersonalize.php", "POST", field, data);
