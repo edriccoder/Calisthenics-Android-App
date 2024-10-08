@@ -15,11 +15,15 @@ import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
@@ -29,6 +33,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -37,12 +42,12 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.utils.EntryXComparator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class emg_bluetooth extends AppCompatActivity {
 
@@ -71,6 +76,15 @@ public class emg_bluetooth extends AppCompatActivity {
     private int stressScore = 0;
     private int stressThreshold = 100;
 
+    private TextView timerTextView;
+    private Button startTimerButton;
+    private Button skipTimerButton;
+    private CountDownTimer countDownTimer;
+    private CountDownTimer restCountDownTimer;
+    private boolean isTimerRunning = false;
+
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,20 +94,23 @@ public class emg_bluetooth extends AppCompatActivity {
         connectBluetoothButton = findViewById(R.id.connectBluetoothButton);
         emgLevelGauge = findViewById(R.id.emgLevelGauge);
         emgValueText = findViewById(R.id.emgValueText);
+        emgLineChart = findViewById(R.id.emgLineChart);
         ImageView bodyFocusImage = findViewById(R.id.imageView6);
 
-        boolean hideButton = getIntent().getBooleanExtra("hide_button", false);
-        if (hideButton) {
-            connectBluetoothButton.setVisibility(View.GONE); // Hide the button
+        // UI setup and Bluetooth initialization
+        boolean hideChart = getIntent().getBooleanExtra("hide_chart", false);
+        if (hideChart) {
+            emgLineChart.setVisibility(View.GONE);
         }
 
         boolean hideimage = getIntent().getBooleanExtra("hide_image", false);
         if (hideimage) {
-            bodyFocusImage.setVisibility(View.GONE); // Hide the image
+            bodyFocusImage.setVisibility(View.GONE);
         }
 
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
+
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             bluetoothStatusText.setText("Bluetooth is not enabled");
             requestBluetoothEnable();
@@ -108,17 +125,15 @@ public class emg_bluetooth extends AppCompatActivity {
 
         bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
 
-        connectBluetoothButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (hasBluetoothPermissions()) {
-                    startScan();
-                } else {
-                    requestBluetoothPermissions();
-                }
+        connectBluetoothButton.setOnClickListener(v -> {
+            if (hasBluetoothPermissions()) {
+                startScan();
+            } else {
+                requestBluetoothPermissions();
             }
         });
 
+        // Load body focus image based on passed intent data
         String focus = getIntent().getStringExtra("focus");
         if (focus != null) {
             switch (focus) {
@@ -143,7 +158,119 @@ public class emg_bluetooth extends AppCompatActivity {
             }
         }
 
-        emgLineChart = findViewById(R.id.emgLineChart);
+        setupChart();
+
+        timerTextView = findViewById(R.id.timerTextView);
+        startTimerButton = findViewById(R.id.startTimerButton);
+        skipTimerButton = findViewById(R.id.skipTimerButton);
+
+        startTimerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!isTimerRunning) {
+                    startTimer();
+                }
+            }
+        });
+
+        skipTimerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isTimerRunning) {
+                    skipTimer();  // Call the skip function
+                }
+            }
+        });
+    }
+
+    private void skipTimer() {
+        if (countDownTimer != null) {
+            countDownTimer.cancel(); // Cancel the running timer
+        }
+        timerTextView.setText("0"); // Set timer text to 0 immediately
+        showRestDialog(); // Show the rest dialog immediately
+    }
+
+    private void startTimer() {
+        isTimerRunning = true;
+        startTimerButton.setEnabled(false); // Disable while timer is running
+
+        countDownTimer = new CountDownTimer(60000, 1000) { // 60 seconds timer
+            @Override
+            public void onTick(long millisUntilFinished) {
+                int secondsRemaining = (int) (millisUntilFinished / 1000);
+                timerTextView.setText(String.valueOf(secondsRemaining));
+            }
+
+            @Override
+            public void onFinish() {
+                timerTextView.setText("0");
+                showRestDialog(); // Show rest dialog when timer finishes
+            }
+        }.start();
+    }
+
+    private void showRestDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Rest Time");
+        builder.setMessage("You need to rest for 30 seconds.");
+
+        // Create a custom view for the rest timer
+        final TextView restTimerTextView = new TextView(this);
+        restTimerTextView.setText("30");
+        restTimerTextView.setTextSize(24);
+        restTimerTextView.setPadding(20, 20, 20, 20);
+        restTimerTextView.setGravity(View.TEXT_ALIGNMENT_CENTER);
+
+        builder.setView(restTimerTextView);
+
+        builder.setCancelable(false);
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Do nothing, we want the dialog to stay open during the rest period
+            }
+        });
+
+        final AlertDialog dialog = builder.create();
+        dialog.show();
+
+        restCountDownTimer = new CountDownTimer(30000, 1000) { // 30 seconds rest timer
+            @Override
+            public void onTick(long millisUntilFinished) {
+                int secondsRemaining = (int) (millisUntilFinished / 1000);
+                restTimerTextView.setText(String.valueOf(secondsRemaining));
+            }
+
+            @Override
+            public void onFinish() {
+                restTimerTextView.setText("0");
+                dialog.dismiss();
+                Toast.makeText(emg_bluetooth.this, "Rest period over, starting the next set.", Toast.LENGTH_SHORT).show();
+                startTimer(); // Automatically start the timer again after rest
+            }
+        }.start();
+    }
+
+    private void resetTimer() {
+        isTimerRunning = false;
+        startTimerButton.setEnabled(true); // Enable the start button again
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+        if (restCountDownTimer != null) {
+            restCountDownTimer.cancel();
+        }
+    }
+
+
+    private void setupChart() {
+
         lineDataSet = new LineDataSet(emgEntries, "EMG Values");
         lineDataSet.setColor(Color.BLUE);
         lineDataSet.setLineWidth(2f);
@@ -156,39 +283,31 @@ public class emg_bluetooth extends AppCompatActivity {
         emgLineChart.setTouchEnabled(false);
         emgLineChart.setDragEnabled(false);
         emgLineChart.setScaleEnabled(false);
-
     }
 
     private void updateChart(float emgValue) {
-        // Ensure the value is valid (between 0 and 4095, the 12-bit range from Arduino)
         if (emgValue < 0 || emgValue > 4095) {
             Log.e("ChartError", "Invalid EMG value: " + emgValue);
-            return;  // Skip invalid values
+            return;
         }
 
-        // Add the new value to the chart
         emgEntries.add(new Entry(timeIndex++, emgValue));
 
-        // Limit the number of entries to avoid overwhelming the chart
         if (emgEntries.size() > 100) {
-            emgEntries.remove(0);  // Remove the oldest entry
+            emgEntries.remove(0);
         }
 
-        // Notify the chart about the updated data
         lineDataSet.notifyDataSetChanged();
         lineData.notifyDataChanged();
         emgLineChart.notifyDataSetChanged();
 
-        // Ensure that we only scroll if the number of entries is greater than a threshold
         if (emgEntries.size() > 100) {
-            emgLineChart.moveViewToX(lineData.getEntryCount() - 100);  // Keep the last 100 entries visible
+            emgLineChart.moveViewToX(lineData.getEntryCount() - 100);
         }
 
-        // Refresh the chart to show updated data
         emgLineChart.invalidate();
         Log.d(TAG, "Updating chart with EMG Value: " + emgValue);
     }
-
 
     private void requestBluetoothEnable() {
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -210,16 +329,18 @@ public class emg_bluetooth extends AppCompatActivity {
     }
 
     private void startScan() {
-        if (hasBluetoothPermissions()) {
-            try {
-                 bluetoothLeScanner.startScan(scanCallback);
-                bluetoothStatusText.setText("Scanning for devices...");
-            } catch (SecurityException e) {
-                Log.e(TAG, "Bluetooth scan permission not granted", e);
+        executorService.execute(() -> {
+            if (hasBluetoothPermissions()) {
+                try {
+                    bluetoothLeScanner.startScan(scanCallback);
+                    runOnUiThread(() -> bluetoothStatusText.setText("Scanning for devices..."));
+                } catch (SecurityException e) {
+                    Log.e(TAG, "Bluetooth scan permission not granted", e);
+                }
+            } else {
+                requestBluetoothPermissions();
             }
-        } else {
-            requestBluetoothPermissions();
-        }
+        });
     }
 
     private final ScanCallback scanCallback = new ScanCallback() {
@@ -238,36 +359,32 @@ public class emg_bluetooth extends AppCompatActivity {
         @Override
         public void onScanFailed(int errorCode) {
             Log.e(TAG, "Bluetooth scan failed with error: " + errorCode);
-            bluetoothStatusText.setText("Scan failed. Try again.");
         }
     };
 
     private void connectToDevice(BluetoothDevice device) {
-        if (hasBluetoothPermissions()) {
-            try {
-                bluetoothGatt = device.connectGatt(this, false, gattCallback);
-                if (bluetoothGatt == null) {
-                    Log.e(TAG, "Failed to connect to GATT server");
+        executorService.execute(() -> {
+            if (hasBluetoothPermissions()) {
+                try {
+                    bluetoothGatt = device.connectGatt(emg_bluetooth.this, false, gattCallback);
+                    runOnUiThread(() -> bluetoothStatusText.setText("Connecting to " + device.getName() + "..."));
+                } catch (SecurityException e) {
+                    Log.e(TAG, "Bluetooth connect permission not granted", e);
                 }
-            } catch (SecurityException e) {
-                Log.e(TAG, "Bluetooth connect failed", e);
+            } else {
+                requestBluetoothPermissions();
             }
-        }
+        });
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            if (status == BluetoothGatt.GATT_FAILURE) {
-                Log.e(TAG, "GATT connection failed");
-                return;
-            }
-
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                runOnUiThread(() -> bluetoothStatusText.setText("Bluetooth Status: Connected"));
+                runOnUiThread(() -> bluetoothStatusText.setText("Connected to device"));
                 bluetoothGatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                runOnUiThread(() -> bluetoothStatusText.setText("Bluetooth Status: Disconnected"));
+                runOnUiThread(() -> bluetoothStatusText.setText("Disconnected"));
             }
         }
 
@@ -277,30 +394,10 @@ public class emg_bluetooth extends AppCompatActivity {
                 BluetoothGattService emgService = gatt.getService(EMG_SERVICE_UUID);
                 if (emgService != null) {
                     emgValueCharacteristic = emgService.getCharacteristic(EMG_VALUE_CHARACTERISTIC_UUID);
-                    if (emgValueCharacteristic != null) {
-                        enableNotifications(emgValueCharacteristic);
-                    } else {
-                        Log.e(TAG, "EMG Value Characteristic not found");
-                    }
-                } else {
-                    Log.e(TAG, "EMG Service not found");
-                }
-            } else {
-                Log.e(TAG, "Service discovery failed: " + status);
-            }
-        }
-
-        private void enableNotifications(BluetoothGattCharacteristic characteristic) {
-            if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CCCD_UUID);
-                if (descriptor != null) {
+                    gatt.setCharacteristicNotification(emgValueCharacteristic, true);
+                    BluetoothGattDescriptor descriptor = emgValueCharacteristic.getDescriptor(CCCD_UUID);
                     descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                    try {
-                        bluetoothGatt.writeDescriptor(descriptor);
-                        bluetoothGatt.setCharacteristicNotification(characteristic, true);
-                    } catch (SecurityException e) {
-                        Log.e(TAG, "Failed to enable notifications", e);
-                    }
+                    gatt.writeDescriptor(descriptor);
                 }
             }
         }
@@ -316,29 +413,20 @@ public class emg_bluetooth extends AppCompatActivity {
                         int emgVal = Integer.parseInt(parts[0]);  // Raw EMG value
                         int emgLevel = Integer.parseInt(parts[1]);  // EMG level (0-3)
 
-                        // Check if values are in expected range
-                        if (emgVal >= 0 && emgVal <= 4095 && emgLevel >= 0 && emgLevel <= 3) {
-                            runOnUiThread(() -> {
-                                // Update the UI based on the parsed EMG value and level
-                                updateUI(emgVal, emgLevel);
-                            });
-                        } else {
-                            Log.e("EMGDataError", "Invalid EMG values: EMGVal = " + emgVal + ", EMGLevel = " + emgLevel);
-                        }
+                        runOnUiThread(() -> updateUI(emgVal, emgLevel));
                     } catch (NumberFormatException e) {
                         Log.e("EMGDataError", "Error parsing EMG data: " + emgData, e);
                     }
-                } else {
-                    Log.e("EMGDataError", "Invalid EMG data format: " + emgData);
                 }
             }
         }
+    };
 
-        private void updateUI(int emgVal, int emgLevel) {
+    private void updateUI(int emgVal, int emgLevel) {
+        runOnUiThread(() -> {
             String emgLevelText;
             int progress;
 
-            // Determine text and progress for the gauge based on EMG level
             switch (emgLevel) {
                 case 0:
                     emgLevelText = "Below Easy";
@@ -361,46 +449,23 @@ public class emg_bluetooth extends AppCompatActivity {
                     progress = 0;
             }
 
-            // Update the text and gauge UI components
             emgValueText.setText("Stress Level: " + emgLevelText);
             emgLevelGauge.setProgress(progress);
-
-            // Update the chart with the new EMG value
             updateChart(emgVal);
 
             stressScore += emgLevel;
-
-            // Check if the stress score exceeds the threshold
             if (stressScore >= stressThreshold) {
                 showWarningDialog();
-                stressScore = 0;  // Reset the stress score after showing the dialog
+                stressScore = 0;
             }
-        }
+        });
+    }
 
-        private void showWarningDialog() {
-            AlertDialog.Builder builder = new AlertDialog.Builder(emg_bluetooth.this);
-            LayoutInflater inflater = getLayoutInflater();
-
-            // Inflate the custom layout for the dialog
-            View dialogLayout = inflater.inflate(R.layout.dialog_warning, null);
-            builder.setView(dialogLayout);
-
-            // Find the ImageView and set a warning image
-            ImageView warningImage = dialogLayout.findViewById(R.id.warningImage);
-            warningImage.setImageResource(R.drawable.warning_icon);  // Replace with your warning image resource
-
-            // Set dialog title and message
-            builder.setTitle("Warning: High Stress");
-            builder.setMessage("Muscle stress is too high. Please take a rest for at least 5 minutes.");
-
-            // Add an "OK" button to dismiss the dialog
-            builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-
-            // Show the dialog
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-
-
-    };
+    private void showWarningDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Warning")
+                .setMessage("Stress level is too high!")
+                .setPositiveButton("OK", null)
+                .show();
+    }
 }

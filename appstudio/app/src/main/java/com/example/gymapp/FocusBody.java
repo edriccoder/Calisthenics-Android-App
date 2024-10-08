@@ -74,6 +74,7 @@ public class FocusBody extends AppCompatActivity {
         emgBut.setOnClickListener(v -> {
             Intent intent1 = new Intent(FocusBody.this, emg_bluetooth.class);
             intent1.putExtra("focus", focusBody);  // Pass the raw focusBody string
+            intent1.putExtra("hide_chart", true);
             startActivity(intent1);
         });
 
