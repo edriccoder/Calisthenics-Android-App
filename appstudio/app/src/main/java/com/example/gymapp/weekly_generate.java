@@ -40,6 +40,7 @@ public class weekly_generate extends AppCompatActivity {
         Button buttonStartFirstExercise = findViewById(R.id.buttonStartFirstExercise);
         adapter = new ExerciseAdapter(this, exerciseList); // Initialize the adapter
         listViewExercises.setAdapter(adapter); // Set the adapter to ListView
+        Button emgBut = findViewById(R.id.emgBut2);
 
         String username = MainActivity.GlobalsLogin.username;
         if (username == null || username.isEmpty()) {
@@ -67,6 +68,11 @@ public class weekly_generate extends AppCompatActivity {
             } else {
                 Toast.makeText(weekly_generate.this, "No exercises available to start.", Toast.LENGTH_SHORT).show();
             }
+        });
+
+        emgBut.setOnClickListener(v -> {
+            Intent intent1 = new Intent(weekly_generate.this, emg_bluetooth.class);
+            startActivity(intent1);
         });
 
         fetchExercises(username, count);

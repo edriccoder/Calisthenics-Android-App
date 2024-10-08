@@ -32,11 +32,13 @@ import java.util.Map;
 
 public class ExerciseDetailActivity extends AppCompatActivity {
 
-    private TextView textViewName, textViewDesc, textViewActivity;
+    private TextView textViewName, textViewDesc, textViewActivity, timerTextView;
     private ImageView imageViewExercise;
     private Button buttonNext, emgBut;
     private ArrayList<Exercise2> exerciseList;
     private int currentPosition;
+    private CountDownTimer countDownTimer;
+    private long timeLeftInMillis = 60000; // 60 seconds (60000 milliseconds)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +51,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         imageViewExercise = findViewById(R.id.imageViewDetailExercise);
         buttonNext = findViewById(R.id.buttonNext);
         emgBut = findViewById(R.id.emgBut);
+        timerTextView = findViewById(R.id.timerTextView);
 
         Intent intent = getIntent();
         exerciseList = (ArrayList<Exercise2>) intent.getSerializableExtra("exerciseList");
@@ -56,10 +59,10 @@ public class ExerciseDetailActivity extends AppCompatActivity {
 
         if (exerciseList != null && !exerciseList.isEmpty() && currentPosition >= 0 && currentPosition < exerciseList.size()) {
             displayExerciseDetails(exerciseList.get(currentPosition));
+            startTimer(); // Start the countdown when the activity loads
         } else {
             Toast.makeText(this, "Exercise data is not available", Toast.LENGTH_SHORT).show();
         }
-
 
         // Button to move to the next exercise
         buttonNext.setOnClickListener(v -> {
@@ -78,7 +81,6 @@ public class ExerciseDetailActivity extends AppCompatActivity {
             intent1.putExtra("show_serial", true);
             startActivity(intent1);
         });
-
     }
 
     private void displayExerciseDetails(Exercise2 exercise) {
@@ -94,6 +96,11 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         } else {
             imageViewExercise.setImageResource(R.drawable.dumbell); // Fallback image
         }
+    }
+
+    private void updateTimerTextView() {
+        int seconds = (int) (timeLeftInMillis / 1000);
+        timerTextView.setText(String.valueOf(seconds));
     }
 
     private void showRestingDialog() {
@@ -136,7 +143,14 @@ public class ExerciseDetailActivity extends AppCompatActivity {
                 logExerciseData(sets, reps, name); // Save sets and reps
                 dialog.dismiss(); // Close the dialog
                 currentPosition++;
-                displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+
+                // Check if there's another exercise
+                if (currentPosition < exerciseList.size()) {
+                    displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+                    restartTimer(); // Restart the timer for the next exercise
+                } else {
+                    Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
+                }
             } else {
                 Toast.makeText(ExerciseDetailActivity.this, "Please enter sets and reps", Toast.LENGTH_SHORT).show();
             }
@@ -148,12 +162,41 @@ public class ExerciseDetailActivity extends AppCompatActivity {
             currentPosition++; // Move to the next exercise
             if (currentPosition < exerciseList.size()) {
                 displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+                restartTimer(); // Restart the timer for the next exercise
             } else {
                 Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
             }
         });
 
         dialog.show();
+    }
+
+    private void restartTimer() {
+        // Cancel the current timer if it is running
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
+        }
+
+        // Reset time to 60 seconds
+        timeLeftInMillis = 60000;
+
+        // Start a new countdown timer
+        startTimer();
+    }
+
+    private void startTimer() {
+        countDownTimer = new CountDownTimer(timeLeftInMillis, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                timeLeftInMillis = millisUntilFinished;
+                updateTimerTextView();
+            }
+
+            @Override
+            public void onFinish() {
+                showRestingDialog(); // Show resting dialog when timer finishes
+            }
+        }.start();
     }
 
     private void logExerciseData(String sets, String reps, String name) {
@@ -187,10 +230,10 @@ public class ExerciseDetailActivity extends AppCompatActivity {
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("username", username);
-                params.put("exercise_name", name); // Ensure this is fetched correctly
+                params.put("exercise_name", name);
                 params.put("sets", sets);
                 params.put("reps", reps);
-                params.put("date", currentDate);
+                params.put("log_date", currentDate);
                 return params;
             }
         };
@@ -199,42 +242,31 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
-
     private void updateExerciseCount() {
+        // This function will increment the exercise count in the database.
         String url = "https://calestechsync.dermocura.net/calestechsync/update_exercise_count.php";
-
         String username = MainActivity.GlobalsLogin.username;
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String currentDate = sdf.format(new Date());
-
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                 response -> {
                     try {
                         JSONObject jsonObject = new JSONObject(response);
-                        if (jsonObject.has("success")) {
-                            String successMessage = jsonObject.getString("success");
-                            Toast.makeText(this, successMessage, Toast.LENGTH_SHORT).show();
-                        } else if (jsonObject.has("error")) {
-                            String errorMessage = jsonObject.getString("error");
-                            Toast.makeText(this, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
+                        if (jsonObject.getBoolean("success")) {
+                            Log.d("ExerciseDetailActivity", "Exercise count updated successfully");
+                        } else {
+                            Log.e("ExerciseDetailActivity", "Failed to update exercise count: " + jsonObject.getString("error"));
                         }
                     } catch (JSONException e) {
-                        Log.e("ExerciseDetailActivity", "JSON parsing error: " + e.getMessage());
-                        Toast.makeText(this, "An error occurred. Please try again.", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
                     }
                 },
                 error -> {
-                    // Log the error message to Logcat
-                    Log.e("ExerciseDetailActivity", "Volley error: " + error.getMessage());
-                    // Show a user-facing message via Toast (you can customize this message)
-                    Toast.makeText(this, "An error occurred. Please try again.", Toast.LENGTH_SHORT).show();
+                    Log.e("ExerciseDetailActivity", "Volley Error: " + error.getMessage());
                 }) {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("username", username);
-                params.put("date", currentDate);
+                params.put("exercise_count", "1"); // Increment exercise count by 1
                 return params;
             }
         };
