@@ -113,7 +113,7 @@
 
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/emgLineChart"
-        android:layout_width="354dp"
+        android:layout_width="match_parent"
         android:layout_height="348dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
