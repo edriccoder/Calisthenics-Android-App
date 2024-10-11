@@ -150,6 +150,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
                 displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
             } else {
                 Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(ExerciseDetailActivity.this, reports.class);
             }
         });
 

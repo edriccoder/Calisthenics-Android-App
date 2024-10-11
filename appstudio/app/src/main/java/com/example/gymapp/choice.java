@@ -35,7 +35,7 @@ public class choice extends AppCompatActivity {
         generate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), gender.class);
+                Intent intent = new Intent(getApplicationContext(), age_assessment.class);
                 startActivity(intent);
             }
         });

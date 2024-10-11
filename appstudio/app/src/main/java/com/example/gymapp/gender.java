@@ -68,7 +68,7 @@ public class gender extends AppCompatActivity {
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), signups.class);
+                Intent intent = new Intent(getApplicationContext(), age_assessment.class);
                 startActivity(intent);
             }
         });
