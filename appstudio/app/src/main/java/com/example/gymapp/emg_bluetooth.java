@@ -42,9 +42,14 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.vishnusivadas.advanced_httpurlconnection.PutData;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +87,7 @@ public class emg_bluetooth extends AppCompatActivity {
     private CountDownTimer countDownTimer;
     private CountDownTimer restCountDownTimer;
     private boolean isTimerRunning = false;
+    private long remainingTime = 60000; // Initialize remaining time to 60 seconds
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -184,20 +190,23 @@ public class emg_bluetooth extends AppCompatActivity {
     }
 
     private void skipTimer() {
-        if (countDownTimer != null) {
+        if (isTimerRunning) {
             countDownTimer.cancel(); // Cancel the running timer
+            isTimerRunning = false; // Mark the timer as not running
+            insertDurationToDatabase((int) (remainingTime / 1000));
+            remainingTime = 60000;
+            showRestDialog(); // Show the rest dialog immediately
         }
-        timerTextView.setText("0"); // Set timer text to 0 immediately
-        showRestDialog(); // Show the rest dialog immediately
     }
 
     private void startTimer() {
         isTimerRunning = true;
         startTimerButton.setEnabled(false); // Disable while timer is running
 
-        countDownTimer = new CountDownTimer(60000, 1000) { // 60 seconds timer
+        countDownTimer = new CountDownTimer(remainingTime, 1000) { // Use remainingTime which is reset to 60 seconds
             @Override
             public void onTick(long millisUntilFinished) {
+                remainingTime = millisUntilFinished; // Update remaining time
                 int secondsRemaining = (int) (millisUntilFinished / 1000);
                 timerTextView.setText(String.valueOf(secondsRemaining));
             }
@@ -205,7 +214,9 @@ public class emg_bluetooth extends AppCompatActivity {
             @Override
             public void onFinish() {
                 timerTextView.setText("0");
+                insertDurationToDatabase(60);
                 showRestDialog(); // Show rest dialog when timer finishes
+                isTimerRunning = false; // Reset running state
             }
         }.start();
     }
@@ -247,10 +258,41 @@ public class emg_bluetooth extends AppCompatActivity {
                 restTimerTextView.setText("0");
                 dialog.dismiss();
                 Toast.makeText(emg_bluetooth.this, "Rest period over, starting the next set.", Toast.LENGTH_SHORT).show();
-                startTimer(); // Automatically start the timer again after rest
+
+                // Reset the timer back to 60 seconds after the rest
+                remainingTime = 60000; // Reset remaining time to 60 seconds
+                startTimer(); // Start the timer again with the full 60 seconds
             }
         }.start();
     }
+
+    private void insertDurationToDatabase(int remainingTime) {
+        String username = MainActivity.GlobalsLogin.username;
+        String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        // Create data to send to PHP script
+        HashMap<String, String> data = new HashMap<>();
+        data.put("username", username);
+        data.put("time_seconds", String.valueOf(remainingTime));
+        data.put("date", date);
+
+        // Convert HashMap to arrays
+        String[] keys = data.keySet().toArray(new String[0]);
+        String[] values = data.values().toArray(new String[0]);
+
+        PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insertDuration.php", "POST", keys, values);
+        if (putData.startPut()) {
+            if (putData.onComplete()) {
+                String result = putData.getResult();
+                if (result.equals("Success")) {
+                    Toast.makeText(this, "Duration inserted successfully", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Error inserting duration", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
 
     private void resetTimer() {
         isTimerRunning = false;

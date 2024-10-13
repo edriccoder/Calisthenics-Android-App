@@ -20,7 +20,9 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
+import com.vishnusivadas.advanced_httpurlconnection.PutData;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class ExerciseDetailActivity extends AppCompatActivity {
@@ -113,20 +116,23 @@ public class ExerciseDetailActivity extends AppCompatActivity {
 
         String name = exerciseList.get(currentPosition).getExName();
 
+        // Variable to track remaining time
+        final int[] remainingTime = {30}; // Start with 30 seconds
+
         // Create a 30-second countdown timer
-        new CountDownTimer(30000, 1000) {
+        CountDownTimer countDownTimer = new CountDownTimer(30000, 1000) {
             public void onTick(long millisUntilFinished) {
-                // Update the countdown text
-                textViewCountdown.setText(String.valueOf(millisUntilFinished / 1000));
+                remainingTime[0] = (int) (millisUntilFinished / 1000); // Store remaining time
+                textViewCountdown.setText(String.valueOf(remainingTime[0])); // Update countdown
             }
 
             public void onFinish() {
-                // Enable the "Next Exercise" button when the timer finishes
-                buttonNextExercise.setEnabled(true);
+                remainingTime[0] = 0; // Set remaining time to 0 when finished
+                buttonNextExercise.setEnabled(true); // Enable the "Next Exercise" button
             }
         }.start();
 
-        // Handle the "Next Exercise" button click
+        // Handle the "Next Exercise" button click (when timer finishes)
         buttonNextExercise.setOnClickListener(v -> {
             String sets = editTextSets.getText().toString();
             String reps = editTextReps.getText().toString();
@@ -134,28 +140,57 @@ public class ExerciseDetailActivity extends AppCompatActivity {
                 logExerciseData(sets, reps, name); // Save sets and reps
                 dialog.dismiss(); // Close the dialog
                 currentPosition++;
-                displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+                displayExerciseDetails(exerciseList.get(currentPosition));
+                insertDurationToDatabase(0); // Insert remaining time to the database
             } else {
                 Toast.makeText(ExerciseDetailActivity.this, "Please enter sets and reps", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Handle the "Skip" button click
+        // Handle the "Skip" button click (when user skips manually)
         buttonSkipExercise.setOnClickListener(v -> {
+            countDownTimer.cancel(); // Cancel the countdown timer
             dialog.dismiss(); // Close the dialog
             currentPosition++;
-            displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
-            currentPosition++; // Move to the next exercise
             if (currentPosition < exerciseList.size()) {
-                displayExerciseDetails(exerciseList.get(currentPosition)); // Show the next exercise
+                displayExerciseDetails(exerciseList.get(currentPosition));
+                insertDurationToDatabase(0); // Insert remaining time to the database
             } else {
                 Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(ExerciseDetailActivity.this, reports.class);
+                Intent intent = new Intent(ExerciseDetailActivity.this, tracking.class);
+                startActivity(intent);
             }
         });
 
         dialog.show(); // Show the dialog
-        dialog.show();
+    }
+
+
+    private void insertDurationToDatabase(int remainingTime) {
+        String username = MainActivity.GlobalsLogin.username;
+        String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        // Create data to send to PHP script
+        HashMap<String, String> data = new HashMap<>();
+        data.put("username", username);
+        data.put("time_seconds", String.valueOf(remainingTime));
+        data.put("date", date);
+
+        // Convert HashMap to arrays
+        String[] keys = data.keySet().toArray(new String[0]);
+        String[] values = data.values().toArray(new String[0]);
+
+        PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insertZeroDuration.php", "POST", keys, values);
+        if (putData.startPut()) {
+            if (putData.onComplete()) {
+                String result = putData.getResult();
+                if (result.equals("Success")) {
+                    Toast.makeText(this, "Duration inserted successfully", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "Error inserting duration", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
     }
 
     private void logExerciseData(String sets, String reps, String name) {
@@ -245,4 +280,80 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(stringRequest);
     }
+
+    private void calculateCaloriesBurned(String exerciseName, int durationInSeconds) {
+        // Fetch weight from the database
+        String username = MainActivity.GlobalsLogin.username;
+        fetchUserWeight(username, exerciseName, durationInSeconds);
+    }
+
+    private void fetchUserWeight(String username, String exerciseName, int durationInSeconds) {
+        String url = "https://calestechsync.dermocura.net/calestechsync/getWeight.php";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        JSONObject jsonObject = new JSONObject(response);
+                        if (jsonObject.has("weight")) {
+                            double weight = jsonObject.getDouble("weight");
+                            fetchExerciseMETValues(exerciseName, weight, durationInSeconds);
+                        } else {
+                            Toast.makeText(this, "Error fetching weight: " + jsonObject.getString("error"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    Toast.makeText(this, "Error fetching weight: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("username", username);
+                return params;
+            }
+        };
+
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
+    }
+
+    private void fetchExerciseMETValues(String exerciseName, double weight, int durationInSeconds) {
+        String url = "https://calestechsync.dermocura.net/calestechsync/get_exercise_met_values.php";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        JSONObject jsonObject = new JSONObject(response);
+                        if (jsonObject.getBoolean("success")) {
+                            JSONArray dataArray = jsonObject.getJSONArray("data");
+                            for (int i = 0; i < dataArray.length(); i++) {
+                                JSONObject exerciseData = dataArray.getJSONObject(i);
+                                String name = exerciseData.getString("exercise_name");
+                                double metValue = exerciseData.getDouble("met_value");
+
+                                // Check if the exercise matches
+                                if (exerciseName.equals(name)) {
+                                    double durationInHours = durationInSeconds / 3600.0;
+                                    double caloriesBurned = metValue * weight * durationInHours;
+                                    Toast.makeText(this, "Calories burned: " + caloriesBurned, Toast.LENGTH_SHORT).show();
+                                    break; // Exit loop after calculation
+                                }
+                            }
+                        } else {
+                            Toast.makeText(this, "Error fetching MET values: " + jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                },
+                error -> {
+                    Toast.makeText(this, "Error fetching MET values: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
+    }
+
 }
