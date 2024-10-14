@@ -26,6 +26,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -72,6 +73,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
                 Toast.makeText(ExerciseDetailActivity.this, "You have reached the last exercise.", Toast.LENGTH_SHORT).show();
             }
             updateExerciseCount();
+            insertCalories();
         });
 
         emgBut.setOnClickListener(v -> {
@@ -281,77 +283,87 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         requestQueue.add(stringRequest);
     }
 
-    private void calculateCaloriesBurned(String exerciseName, int durationInSeconds) {
-        // Fetch weight from the database
+    private void insertCalories() {
+        // Get the username from the global session
         String username = MainActivity.GlobalsLogin.username;
-        fetchUserWeight(username, exerciseName, durationInSeconds);
-    }
 
-    private void fetchUserWeight(String username, String exerciseName, int durationInSeconds) {
-        String url = "https://calestechsync.dermocura.net/calestechsync/getWeight.php";
+        // Get the exercise name from the current exercise
+        String exerciseName = exerciseList.get(currentPosition).getExName();
 
+        // Get today's date in the format 'yyyy-MM-dd'
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String currentDate = sdf.format(new Date());
+
+        // URL for inserting calories burned
+        String url = "https://calestechsync.dermocura.net/calestechsync/insertCaloriesBurned.php";
+
+        // Create the POST request to send data to the server
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                 response -> {
+                    // Log the server's raw response
+                    Log.d("ServerResponse", "Raw Response: " + response);
+
+                    // Parse the response to get the required data (assuming JSON)
                     try {
-                        JSONObject jsonObject = new JSONObject(response);
-                        if (jsonObject.has("weight")) {
-                            double weight = jsonObject.getDouble("weight");
-                            fetchExerciseMETValues(exerciseName, weight, durationInSeconds);
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.getBoolean("success")) {
+                            Log.d("CaloriesInsert", "Calories burned record created successfully.");
+
+                            // Use getDouble and cast to float
+                            float weight = (float) jsonResponse.getDouble("weight");
+                            float metValue = (float) jsonResponse.getDouble("met_value");
+                            int durationInSeconds = jsonResponse.getInt("duration_in_seconds");
+
+                            // Log the values
+                            Log.d("CaloriesInsert", "Weight: " + weight);
+                            Log.d("CaloriesInsert", "MET Value: " + metValue);
+                            Log.d("CaloriesInsert", "Duration in Seconds: " + durationInSeconds);
                         } else {
-                            Toast.makeText(this, "Error fetching weight: " + jsonObject.getString("error"), Toast.LENGTH_SHORT).show();
+                            Log.e("CaloriesInsert", "Failed to create calories burned record: " + jsonResponse.getString("message"));
                         }
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        Log.e("CaloriesInsert", "JSON parsing error: " + e.getMessage());
                     }
+
+                    // Display the server's response as a Toast message
+                    Toast.makeText(this, response, Toast.LENGTH_SHORT).show();
                 },
                 error -> {
-                    Toast.makeText(this, "Error fetching weight: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Enhanced error logging
+                    if (error.networkResponse != null) {
+                        // Log status code
+                        int statusCode = error.networkResponse.statusCode;
+                        Log.e("ServerError", "Status Code: " + statusCode);
+
+                        // Log response data (if available)
+                        String responseBody = "";
+                        try {
+                            responseBody = new String(error.networkResponse.data, "utf-8");
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                        Log.e("ServerError", "Response Body: " + responseBody);
+
+                        // Optional: Display status code and error body to the user
+                        Toast.makeText(this, "Error: " + statusCode + "\n" + responseBody, Toast.LENGTH_LONG).show();
+                    } else {
+                        // General error message if no network response
+                        Log.e("ExerciseDetailActivity", "Volley Error: " + error.getMessage());
+                        Toast.makeText(this, "Network error! Please check your connection.", Toast.LENGTH_SHORT).show();
+                    }
                 }) {
             @Override
             protected Map<String, String> getParams() {
+                // Prepare the parameters to send with the request
                 Map<String, String> params = new HashMap<>();
                 params.put("username", username);
+                params.put("exercise_name", exerciseName);
+                params.put("date", currentDate); // Send today's date
                 return params;
             }
         };
 
-        RequestQueue requestQueue = Volley.newRequestQueue(this);
-        requestQueue.add(stringRequest);
-    }
-
-    private void fetchExerciseMETValues(String exerciseName, double weight, int durationInSeconds) {
-        String url = "https://calestechsync.dermocura.net/calestechsync/get_exercise_met_values.php";
-
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-                response -> {
-                    try {
-                        JSONObject jsonObject = new JSONObject(response);
-                        if (jsonObject.getBoolean("success")) {
-                            JSONArray dataArray = jsonObject.getJSONArray("data");
-                            for (int i = 0; i < dataArray.length(); i++) {
-                                JSONObject exerciseData = dataArray.getJSONObject(i);
-                                String name = exerciseData.getString("exercise_name");
-                                double metValue = exerciseData.getDouble("met_value");
-
-                                // Check if the exercise matches
-                                if (exerciseName.equals(name)) {
-                                    double durationInHours = durationInSeconds / 3600.0;
-                                    double caloriesBurned = metValue * weight * durationInHours;
-                                    Toast.makeText(this, "Calories burned: " + caloriesBurned, Toast.LENGTH_SHORT).show();
-                                    break; // Exit loop after calculation
-                                }
-                            }
-                        } else {
-                            Toast.makeText(this, "Error fetching MET values: " + jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                },
-                error -> {
-                    Toast.makeText(this, "Error fetching MET values: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-
+// Add the request to the Volley request queue
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(stringRequest);
     }

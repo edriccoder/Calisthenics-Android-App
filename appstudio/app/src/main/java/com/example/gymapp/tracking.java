@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class tracking extends Fragment {
-    private TextView workoutCountText;
+    private TextView workoutCountText, caloriesText;
     private ListView exerciseLogListView;
     private List<ExerciseLog> exerciseLogList;
     private ExerciseLogAdapter adapter;
@@ -50,12 +50,58 @@ public class tracking extends Fragment {
         exerciseLogList = new ArrayList<>();
         adapter = new ExerciseLogAdapter(getActivity(), exerciseLogList);
         exerciseLogListView.setAdapter(adapter);
+        caloriesText = view.findViewById(R.id.workoutCountCalories);
 
         getExerciseCount();
         getExerciseLogs();
+        getCaloriesBurned();
 
         return view;
     }
+
+    private void getCaloriesBurned() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                String username = MainActivity.GlobalsLogin.username;
+
+                String[] field = {"username"};
+                String[] data = {username};
+
+                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getTotalCaloriesBurned.php", "POST", field, data);
+
+                if (putData.startPut() && putData.onComplete()) {
+                    String result = putData.getResult();
+                    Log.d(TAG, "Server response: " + result);
+
+                    try {
+                        JSONObject responseJson = new JSONObject(result);
+
+                        // Check for any error in the response
+                        if (responseJson.has("success") && responseJson.getBoolean("success")) {
+                            // Get the total calories burned
+                            float totalCalories = (float) responseJson.getDouble("total_calories");
+                            caloriesText.setText(String.valueOf(totalCalories));
+                        } else {
+                            String errorMessage = responseJson.getString("message");
+                            Log.e(TAG, errorMessage);
+                            Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "JSON Parsing error: " + result, e);
+                        Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    String errorMsg = "Failed to complete request";
+                    Log.e(TAG, errorMsg);
+                    Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
 
     private void getExerciseCount() {
         Handler handler = new Handler(Looper.getMainLooper());
