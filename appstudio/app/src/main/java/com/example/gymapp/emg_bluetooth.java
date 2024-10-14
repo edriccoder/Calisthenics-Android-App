@@ -84,6 +84,7 @@ public class emg_bluetooth extends AppCompatActivity {
     private TextView timerTextView;
     private Button startTimerButton;
     private Button skipTimerButton;
+    private ImageView question;
     private CountDownTimer countDownTimer;
     private CountDownTimer restCountDownTimer;
     private boolean isTimerRunning = false;
@@ -102,6 +103,15 @@ public class emg_bluetooth extends AppCompatActivity {
         emgValueText = findViewById(R.id.emgValueText);
         emgLineChart = findViewById(R.id.emgLineChart);
         ImageView bodyFocusImage = findViewById(R.id.imageView6);
+        question = findViewById(R.id.question);
+
+        question.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent1 = new Intent(emg_bluetooth.this, guide_pressure.class);
+                startActivity(intent1);
+            }
+        });
 
         // UI setup and Bluetooth initialization
         boolean hideChart = getIntent().getBooleanExtra("hide_chart", false);
