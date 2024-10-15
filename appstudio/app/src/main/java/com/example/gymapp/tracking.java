@@ -41,7 +41,8 @@ import java.util.List;
 import java.util.Locale;
 
 public class tracking extends Fragment {
-    private TextView workoutCountText, caloriesText, weightLogsText;  // TextView to display weight logs
+    private TextView workoutCountText, caloriesText, weightLogsText, currentWeightText,
+            exerciseTimeText;  // TextView to display weight logs
     private ListView exerciseLogListView;
     private List<ExerciseLog> exerciseLogList;
     private ExerciseLogAdapter exerciseAdapter;
@@ -56,34 +57,40 @@ public class tracking extends Fragment {
         workoutCountText = view.findViewById(R.id.workoutCountText);
         exerciseLogListView = view.findViewById(R.id.exerciseLogListView);
         exerciseLogList = new ArrayList<>();
-
-        // Set up adapter for exercise logs
         exerciseAdapter = new ExerciseLogAdapter(getActivity(), exerciseLogList);
         exerciseLogListView.setAdapter(exerciseAdapter);
         adapter = new ExerciseLogAdapter(getActivity(), exerciseLogList);
         exerciseLogListView.setAdapter(adapter);
+        exerciseTimeText = view.findViewById(R.id.exerciseTimeText);
 
         caloriesText = view.findViewById(R.id.workoutCountCalories);
         weightLogsChart = view.findViewById(R.id.weightChart);
 
+        // Initialize the currentWeightText TextView
+        currentWeightText = view.findViewById(R.id.currentWeight);
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        getExerciseTime(todayDate);
+
         // Fetch data
         getExerciseCount();
         getExerciseLogs();
-        getCaloriesBurned();
-        getWeightLogs();  // Call getWeightLogs to fetch and display weight logs
+        getCaloriesBurned(todayDate);
+        getWeightLogs();  // Fetch weight logs and display current weight
+
 
         return view;
     }
 
-    private void getCaloriesBurned() {
+    private void getCaloriesBurned(String date) { // Pass date as a parameter
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
             public void run() {
                 String username = MainActivity.GlobalsLogin.username;
 
-                String[] field = {"username"};
-                String[] data = {username};
+                // Add the date field to the request
+                String[] field = {"username", "date"};
+                String[] data = {username, date}; // Pass the username and date
 
                 PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getTotalCaloriesBurned.php", "POST", field, data);
 
@@ -213,18 +220,13 @@ public class tracking extends Fragment {
             @Override
             public void run() {
                 String username = MainActivity.GlobalsLogin.username;
-
-                // Get the current date
                 String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-                // Define fields and data to send in the POST request
                 String[] field = {"username", "log_date"};
                 String[] data = {username, date};
 
-                // Use PutData to send a POST request
                 PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/executeWeightQuery.php", "POST", field, data);
 
-                // Check if the request is successful
                 if (putData.startPut() && putData.onComplete()) {
                     String result = putData.getResult();
                     Log.d(TAG, "Server response: " + result);
@@ -235,30 +237,35 @@ public class tracking extends Fragment {
 
                         if (status.equals("success")) {
                             JSONArray weightLogs = responseJson.getJSONArray("weight_logs");
-                            ArrayList<Entry> weightEntries = new ArrayList<>();  // To hold the weight data
-                            ArrayList<String> logDates = new ArrayList<>();      // To hold the log dates
+                            ArrayList<Entry> weightEntries = new ArrayList<>();
+                            ArrayList<String> logDates = new ArrayList<>();
 
-                            // Iterate over the JSON array and build a list of weight entries for the chart
+                            // Extract the current weight from the first log
+                            if (weightLogs.length() > 0) {
+                                JSONObject latestWeightLog = weightLogs.getJSONObject(0);
+                                double currentWeight = latestWeightLog.getDouble("weight");
+
+                                // Update the currentWeightText TextView
+                                currentWeightText.setText(String.format(Locale.getDefault(), "%.1f kg", currentWeight));
+                            }
+
+                            // Build chart data
                             for (int i = 0; i < weightLogs.length(); i++) {
                                 JSONObject logEntry = weightLogs.getJSONObject(i);
                                 double weight = logEntry.getDouble("weight");
                                 String logDate = logEntry.getString("log_date");
 
-                                // Add logDate to the logDates list
                                 logDates.add(logDate);
-
-                                // Use the index (i) as the x-axis value and weight as the y-axis value
                                 weightEntries.add(new Entry(i, (float) weight));
                             }
 
-                            // Set the data in the LineChart and provide logDates for X-axis
+                            // Update the chart with the weight data
                             setWeightLogsChart(weightEntries, logDates);
                         } else {
                             String message = responseJson.getString("message");
                             Log.e(TAG, message);
                             Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
                         }
-
                     } catch (JSONException e) {
                         e.printStackTrace();
                         Log.e(TAG, "JSON Parsing error: " + result, e);
@@ -272,6 +279,7 @@ public class tracking extends Fragment {
             }
         });
     }
+
 
     // Method to configure and display the weight logs on the chart
     private void setWeightLogsChart(ArrayList<Entry> weightEntries, final ArrayList<String> logDates) {
@@ -327,5 +335,60 @@ public class tracking extends Fragment {
         // Refresh the chart
         weightLogsChart.invalidate();
     }
+
+    private void getExerciseTime(String logDate) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                String username = MainActivity.GlobalsLogin.username;
+
+                String[] field = {"username", "log_date"};
+                String[] data = {username, logDate};
+
+                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getExerciseTime.php", "POST", field, data);
+
+                if (putData.startPut() && putData.onComplete()) {
+                    String result = putData.getResult();
+                    Log.d(TAG, "Server response: " + result);
+
+                    try {
+                        JSONObject responseJson = new JSONObject(result);
+                        String status = responseJson.getString("status");
+
+                        if (status.equals("success")) {
+                            int exerciseTime = responseJson.getInt("exerciseTime");
+                            // Convert seconds to a more readable format, e.g., HH:mm:ss
+                            String formattedTime = formatSecondsToTime(exerciseTime);
+                            // Display the exercise time (You might need to add a TextView for this)
+                            exerciseTimeText.setText(formattedTime);
+                            Toast.makeText(getActivity(), formattedTime, Toast.LENGTH_SHORT).show();
+                        } else {
+                            String message = responseJson.getString("message");
+                            Log.e(TAG, message);
+                            Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "JSON Parsing error: " + result, e);
+                        Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    String errorMsg = "Failed to complete request";
+                    Log.e(TAG, errorMsg);
+                    Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    // Helper method to format seconds into HH:mm:ss
+    private String formatSecondsToTime(int seconds) {
+        int hrs = seconds / 3600;
+        int mins = (seconds % 3600) / 60;
+        int secs = seconds % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d:%02d", hrs, mins, secs);
+    }
+
 }
 

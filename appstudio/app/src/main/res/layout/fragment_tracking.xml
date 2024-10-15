@@ -26,124 +26,147 @@
         <androidx.cardview.widget.CardView
             android:id="@+id/cardView2"
             android:layout_width="match_parent"
-            android:layout_height="124dp"
+            android:layout_height="wrap_content"
             android:layout_margin="16dp"
             app:cardCornerRadius="22dp"
-            app:cardElevation="4dp">
+            app:cardElevation="4dp"
+            android:padding="16dp">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:paddingLeft="10dp"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:padding="10dp"
+                android:gravity="center">
 
-                <TextView
-                    android:id="@+id/text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="10dp"
-                    android:text="Workout Today Done"
-                    android:textColor="#000000"
-                    android:textSize="15sp" />
-
+                <!-- Left section for workout count -->
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/text"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingLeft="50dp"
-                        android:paddingBottom="8dp">
+                        android:text="Workout Today Done"
+                        android:textColor="#000000"
+                        android:textSize="15sp"
+                        android:gravity="center"/>
 
-                        <ImageView
-                            android:id="@+id/workoutLogo"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:contentDescription="Workout Logo"
-                            android:src="@drawable/ic_workout_logo" />
+                    <ImageView
+                        android:id="@+id/workoutLogo"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:contentDescription="Workout Logo"
+                        android:src="@drawable/ic_workout_logo"
+                        android:layout_marginTop="8dp"/>
 
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/workoutCountText"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="horizontal">
+                        android:text="0"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"/>
 
-                        <TextView
-                            android:id="@+id/workoutCountText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#000000"
-                            android:textSize="18sp" />
-
-                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:paddingRight="10dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/text2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="10dp"
-                    android:text="Calories Burn Today"
-                    android:textColor="#000000"
-                    android:textSize="15sp" />
-
+                <!-- Middle section for calories burned -->
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/text2"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingLeft="50dp"
-                        android:paddingBottom="8dp">
+                        android:text="Calories Burn Today"
+                        android:textColor="#000000"
+                        android:textSize="15sp"
+                        android:gravity="center"/>
 
-                        <ImageView
-                            android:id="@+id/workoutCalories"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:contentDescription="Workout Logo"
-                            android:src="@drawable/ic_calories_burn" />
+                    <ImageView
+                        android:id="@+id/workoutCalories"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:contentDescription="Calories Burn Logo"
+                        android:src="@drawable/ic_calories_burn"
+                        android:layout_marginTop="8dp"/>
 
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:id="@+id/workoutCountCalories"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:gravity="center"
-                        android:orientation="horizontal">
+                        android:text="0"
+                        android:textColor="#000000"
+                        android:textSize="18sp" />
 
-                        <TextView
-                            android:id="@+id/workoutCountCalories"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textColor="#000000"
-                            android:textSize="18sp" />
+                </LinearLayout>
 
-                    </LinearLayout>
+                <!-- Right section for current weight and exercise time -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <!-- Current Weight -->
+                    <TextView
+                        android:id="@+id/currentWeightLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Current Weight"
+                        android:textColor="#000000"
+                        android:textSize="15sp"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:id="@+id/currentWeight"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 kg"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"/>
+
+                    <!-- Exercise Duration -->
+                    <TextView
+                        android:id="@+id/exerciseTimeLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Time Duration"
+                        android:textColor="#000000"
+                        android:textSize="15sp"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:id="@+id/exerciseTimeText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 min"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"/>
+
                 </LinearLayout>
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
+
 
         <ListView
             android:id="@+id/exerciseLogListView"

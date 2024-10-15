@@ -291,8 +291,12 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         String exerciseName = exerciseList.get(currentPosition).getExName();
 
         // Get today's date in the format 'yyyy-MM-dd'
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        // Get today's date in the format 'yyyy-MM-dd'
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         String currentDate = sdf.format(new Date());
+
+        Log.d("DateInsert", "Current Date: " + currentDate);
+
 
         // URL for inserting calories burned
         String url = "https://calestechsync.dermocura.net/calestechsync/insertCaloriesBurned.php";
@@ -354,11 +358,11 @@ public class ExerciseDetailActivity extends AppCompatActivity {
                 }) {
             @Override
             protected Map<String, String> getParams() {
-                // Prepare the parameters to send with the request
                 Map<String, String> params = new HashMap<>();
                 params.put("username", username);
                 params.put("exercise_name", exerciseName);
-                params.put("date", currentDate); // Send today's date
+                params.put("date", currentDate);  // Send today's date
+                Log.d("DateParam", "Sent Date: " + currentDate);  // Log the date being sent
                 return params;
             }
         };
