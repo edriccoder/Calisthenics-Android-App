@@ -48,6 +48,7 @@ public class tracking extends Fragment {
     private ExerciseLogAdapter exerciseAdapter;
     private ExerciseLogAdapter adapter;
     private LineChart weightLogsChart;
+    private Button settingsButton;
     private static final String TAG = "TrackingFragment";
 
     @Override
@@ -62,6 +63,7 @@ public class tracking extends Fragment {
         adapter = new ExerciseLogAdapter(getActivity(), exerciseLogList);
         exerciseLogListView.setAdapter(adapter);
         exerciseTimeText = view.findViewById(R.id.exerciseTimeText);
+        settingsButton = view.findViewById(R.id.settingsButton);
 
         caloriesText = view.findViewById(R.id.workoutCountCalories);
         weightLogsChart = view.findViewById(R.id.weightChart);
@@ -71,6 +73,40 @@ public class tracking extends Fragment {
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         getExerciseTime(todayDate);
 
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Create an AlertDialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                builder.setTitle("Edit Weight");
+
+                // Create an input field for weight
+                final EditText input = new EditText(getContext());
+                input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                input.setHint("Enter your weight");
+                builder.setView(input);
+
+                // Set up the buttons
+                builder.setPositiveButton("Submit", (dialog, which) -> {
+                    // Get the inputted weight
+                    String weightInput = input.getText().toString();
+
+                    if (!weightInput.isEmpty()) {
+                        // Call the method to send data to the server
+                        sendWeightToServer(weightInput);
+                    } else {
+                        Toast.makeText(getContext(), "Weight cannot be empty", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+                // Show the dialog
+                builder.show();
+            }
+        });
+
+
         // Fetch data
         getExerciseCount();
         getExerciseLogs();
@@ -79,6 +115,26 @@ public class tracking extends Fragment {
 
 
         return view;
+    }
+
+    private void sendWeightToServer(String weight) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
+            String logDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+            String[] field = {"username", "weight", "log_date"};
+            String[] data = {username, weight, logDate};
+
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insertWeightLogs.php", "POST", field, data);
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
+                Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getContext(), "Failed to submit weight", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void getCaloriesBurned(String date) { // Pass date as a parameter
