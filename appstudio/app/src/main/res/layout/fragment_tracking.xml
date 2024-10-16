@@ -186,7 +186,6 @@
 
         </androidx.cardview.widget.CardView>
 
-
         <ListView
             android:id="@+id/exerciseLogListView"
             android:layout_width="match_parent"

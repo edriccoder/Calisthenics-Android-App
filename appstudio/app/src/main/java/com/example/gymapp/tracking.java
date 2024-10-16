@@ -111,11 +111,13 @@ public class tracking extends Fragment {
         getExerciseCount();
         getExerciseLogs();
         getCaloriesBurned(todayDate);
-        getWeightLogs();  // Fetch weight logs and display current weight
+        getWeightLogs();
+        getCurrentWeight();// Fetch weight logs and display current weight
 
 
         return view;
     }
+
 
     private void sendWeightToServer(String weight) {
         Handler handler = new Handler(Looper.getMainLooper());
@@ -133,6 +135,48 @@ public class tracking extends Fragment {
                 Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(getContext(), "Failed to submit weight", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void getCurrentWeight() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
+
+            // Define the fields and data for the POST request
+            String[] field = {"username"};
+            String[] data = {username};
+
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getWeight.php", "POST", field, data);
+
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
+
+                try {
+                    JSONObject responseJson = new JSONObject(result);
+                    String status = responseJson.getString("status");
+
+                    if (status.equals("success")) {
+                        // Retrieve and display the weight
+                        double weight = responseJson.getDouble("weight");
+                        currentWeightText.setText(String.format(Locale.getDefault(), "%.1f kg", weight));
+                    } else {
+                        // Handle error
+                        String message = responseJson.getString("message");
+                        Log.e(TAG, message);
+                        Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "JSON Parsing error: " + result, e);
+                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                String errorMsg = "Failed to complete request";
+                Log.e(TAG, errorMsg);
+                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -295,15 +339,6 @@ public class tracking extends Fragment {
                             JSONArray weightLogs = responseJson.getJSONArray("weight_logs");
                             ArrayList<Entry> weightEntries = new ArrayList<>();
                             ArrayList<String> logDates = new ArrayList<>();
-
-                            // Extract the current weight from the first log
-                            if (weightLogs.length() > 0) {
-                                JSONObject latestWeightLog = weightLogs.getJSONObject(0);
-                                double currentWeight = latestWeightLog.getDouble("weight");
-
-                                // Update the currentWeightText TextView
-                                currentWeightText.setText(String.format(Locale.getDefault(), "%.1f kg", currentWeight));
-                            }
 
                             // Build chart data
                             for (int i = 0; i < weightLogs.length(); i++) {

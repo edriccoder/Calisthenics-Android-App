@@ -31,5 +31,11 @@
         <item>6</item>
         <item>7</item>
     </string-array>
+    <string-array name="time_range_options">
+        <item>1 Week</item>
+        <item>1 Month</item>
+        <item>2 Months</item>
+        <item>3 Months</item>
+    </string-array>
     <string name="email_digits">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@._-</string>
 </resources>
