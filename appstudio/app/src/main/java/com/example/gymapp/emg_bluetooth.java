@@ -89,6 +89,17 @@ public class emg_bluetooth extends AppCompatActivity {
     private CountDownTimer restCountDownTimer;
     private boolean isTimerRunning = false;
     private long remainingTime = 60000; // Initialize remaining time to 60 seconds
+    private int easySeconds = 0;
+    private int mediumSeconds = 0;
+    private int hardSeconds = 0;
+    private int belowEasySeconds = 0;
+    private int previousEmgLevel = -1; // To track changes in EMG level
+    private int currentEmgLevel = -1; // Initialize with an invalid level
+    private long lastEmgChangeTime = 0; // To track the last change timestamp
+
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable timeTrackerRunnable;
+
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -197,6 +208,8 @@ public class emg_bluetooth extends AppCompatActivity {
                 }
             }
         });
+
+        initializeTimeTracker();
     }
 
     private void skipTimer() {
@@ -479,6 +492,35 @@ public class emg_bluetooth extends AppCompatActivity {
             String emgLevelText;
             int progress;
 
+            if (emgLevel != currentEmgLevel) {
+                // EMG level has changed
+                long currentTime = System.currentTimeMillis();
+                if (currentEmgLevel != -1 && lastEmgChangeTime != 0) {
+                    long elapsedTime = (currentTime - lastEmgChangeTime) / 1000; // Convert to seconds
+                    if (elapsedTime > 0) {
+                        switch (currentEmgLevel) {
+                            case 0:
+                                belowEasySeconds += elapsedTime;
+                                break;
+                            case 1:
+                                easySeconds += elapsedTime;
+                                break;
+                            case 2:
+                                mediumSeconds += elapsedTime;
+                                break;
+                            case 3:
+                                hardSeconds += elapsedTime;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+                // Update the current level and timestamp
+                currentEmgLevel = emgLevel;
+                lastEmgChangeTime = currentTime;
+            }
+
             switch (emgLevel) {
                 case 0:
                     emgLevelText = "Below Easy";
@@ -505,19 +547,81 @@ public class emg_bluetooth extends AppCompatActivity {
             emgLevelGauge.setProgress(progress);
             updateChart(emgVal);
 
-            stressScore += emgLevel;
-            if (stressScore >= stressThreshold) {
-                showWarningDialog();
-                stressScore = 0;
-            }
+            // Log the current counters for debugging
+            Log.d(TAG, "Time - Below Easy: " + belowEasySeconds + "s, Easy: " + easySeconds + "s, Medium: " + mediumSeconds + "s, Hard: " + hardSeconds + "s");
+
+            // Optionally, you can implement logic based on stressScore or thresholds here
         });
     }
 
-    private void showWarningDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Warning")
-                .setMessage("Stress level is too high!")
-                .setPositiveButton("OK", null)
-                .show();
+
+    private void initializeTimeTracker() {
+        timeTrackerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                long currentTime = System.currentTimeMillis();
+                if (currentEmgLevel != -1 && lastEmgChangeTime != 0) {
+                    long elapsedTime = (currentTime - lastEmgChangeTime) / 1000; // Convert to seconds
+                    if (elapsedTime > 0) {
+                        switch (currentEmgLevel) {
+                            case 0:
+                                belowEasySeconds += elapsedTime;
+                                break;
+                            case 1:
+                                easySeconds += elapsedTime;
+                                break;
+                            case 2:
+                                mediumSeconds += elapsedTime;
+                                break;
+                            case 3:
+                                hardSeconds += elapsedTime;
+                                break;
+                            default:
+                                break;
+                        }
+                        lastEmgChangeTime = currentTime;
+                    }
+                }
+                handler.postDelayed(this, 1000); // Schedule the next run after 1 second
+            }
+        };
+        handler.post(timeTrackerRunnable); // Start the time tracker
+    }
+
+
+    private void insertTimeTrackerData() {
+        String username = MainActivity.GlobalsLogin.username;
+        String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        // Prepare the data to send to the PHP script
+        HashMap<String, String> data = new HashMap<>();
+        data.put("username", username);
+        data.put("date", date);
+        data.put("below_easy_seconds", String.valueOf(belowEasySeconds));
+        data.put("easy_seconds", String.valueOf(easySeconds));
+        data.put("medium_seconds", String.valueOf(mediumSeconds));
+        data.put("hard_seconds", String.valueOf(hardSeconds));
+
+        // Convert HashMap to arrays
+        String[] keys = data.keySet().toArray(new String[0]);
+        String[] values = data.values().toArray(new String[0]);
+
+        // Initialize PutData with the new PHP script URL
+        PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insertDurationEMG.php", "POST", keys, values);
+
+        // Start the PutData task
+        if (putData.startPut()) {
+            if (putData.onComplete()) {
+                String result = putData.getResult();
+                if (result.equals("Success")) {
+                    Toast.makeText(this, "Time Tracker data inserted successfully", Toast.LENGTH_SHORT).show();
+
+                } else {
+                    Toast.makeText(this, "Error inserting time tracker data: " + result, Toast.LENGTH_SHORT).show();
+                }
+            }
+        } else {
+            Toast.makeText(this, "Failed to start data upload", Toast.LENGTH_SHORT).show();
+        }
     }
 }
