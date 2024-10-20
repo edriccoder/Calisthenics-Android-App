@@ -7,95 +7,94 @@
     android:background="@drawable/dialog_background">
 
     <TextView
-        android:id="@+id/textViewRest"
+        android:id="@+id/textViewExerciseName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Exercise Name"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Sets Label -->
+    <TextView
+        android:id="@+id/labelSets"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Rest Time"
-        android:textColor="@color/black"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        android:text="Sets:"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/textViewExerciseName"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.11" />
+        android:layout_marginEnd="10dp"/>
 
+    <!-- Sets EditText -->
+    <EditText
+        android:id="@+id/editTextSets"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:hint="Enter sets"
+        app:layout_constraintTop_toTopOf="@id/labelSets"
+        app:layout_constraintStart_toEndOf="@id/labelSets"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="10dp"/>
+
+    <!-- Reps Label -->
+    <TextView
+        android:id="@+id/labelReps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Reps:"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/editTextSets"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginEnd="10dp"/>
+
+    <!-- Reps EditText -->
+    <EditText
+        android:id="@+id/editTextReps"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:hint="Enter reps"
+        app:layout_constraintTop_toTopOf="@id/labelReps"
+        app:layout_constraintStart_toEndOf="@id/labelReps"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Countdown Timer -->
     <TextView
         android:id="@+id/textViewCountdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="30"
-        android:textColor="@color/primaryColor"
-        android:textSize="48sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        android:textSize="24sp"
+        android:textColor="@color/colorAccent"
+        app:layout_constraintTop_toBottomOf="@id/editTextReps"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewRest" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Buttons -->
+    <Button
+        android:id="@+id/buttonSkipExercise"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Skip"
+        app:layout_constraintTop_toBottomOf="@id/textViewCountdown"
+        app:layout_constraintEnd_toStartOf="@id/buttonNextExercise"
+        android:layout_marginEnd="10dp"/>
 
     <Button
         android:id="@+id/buttonNextExercise"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:enabled="false"
         android:text="Next Exercise"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewCountdown"
-        app:layout_constraintVertical_bias="0.033" />
-
-    <TextView
-        android:id="@+id/textViewExerciseName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Exercise Name"
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonNextExercise"
-        app:layout_constraintVertical_bias="0.05" />
-
-    <EditText
-        android:id="@+id/editTextSets"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="Sets"
-        android:inputType="number"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewExerciseName"
-        app:layout_constraintVertical_bias="0.046" />
-
-    <EditText
-        android:id="@+id/editTextReps"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="Reps"
-        android:inputType="number"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextSets"
-        app:layout_constraintVertical_bias="0.049" />
-
-    <!-- Skip Button -->
-    <Button
-        android:id="@+id/buttonSkipExercise"
-        android:layout_width="70dp"
-        android:layout_height="48dp"
-        android:text="Skip"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        android:enabled="false"
+        app:layout_constraintTop_toTopOf="@id/buttonSkipExercise"
+        app:layout_constraintEnd_toEndOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

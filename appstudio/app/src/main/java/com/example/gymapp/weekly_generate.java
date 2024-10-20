@@ -107,38 +107,38 @@ public class weekly_generate extends AppCompatActivity {
 
         try {
             JSONObject jsonObject = new JSONObject(jsonData);
-            if (jsonObject.has("error")) {
-                String errorMessage = jsonObject.getString("error");
-                Toast.makeText(weekly_generate.this, errorMessage, Toast.LENGTH_LONG).show();
-                return;
-            }
 
-            if (jsonObject.has("data")) {
+            if (jsonObject.has("success") && jsonObject.getBoolean("success")) {
                 JSONArray exercisesArray = jsonObject.getJSONArray("data");
 
                 exerciseList.clear(); // Clear the existing list
                 for (int i = 0; i < exercisesArray.length(); i++) {
                     JSONObject exerciseObject = exercisesArray.getJSONObject(i);
 
-                    String exName = exerciseObject.getString("exercise_name");
+                    // Correct the field names according to the server response
+                    String exName = exerciseObject.getString("exercise_name"); // Renamed to match server field
                     String exDesc = exerciseObject.getString("exdesc");
                     String exImg = exerciseObject.getString("eximg");
-                    String activityValue = exerciseObject.getString("activity_goal");
+                    String activityGoal = exerciseObject.optString("activity_goal", "N/A");
+                    String otherFocus = exerciseObject.optString("other_focus", "No focus specified");
 
-                    Exercise2 exercise = new Exercise2(exName, exDesc, exImg, activityValue);
+                    // Add logic to download and save the image
+                    Exercise2 exercise = new Exercise2(exName, exDesc, exImg, activityGoal, otherFocus);
                     downloadAndSaveImage(exercise); // Download and save the image
                     exerciseList.add(exercise);
                 }
 
                 runOnUiThread(() -> adapter.notifyDataSetChanged()); // Notify the adapter
             } else {
-                Log.d("ParseExercises", "No exercises key in JSON.");
+                Log.d("ParseExercises", "Error: No exercises found.");
+                Toast.makeText(weekly_generate.this, "No exercises found.", Toast.LENGTH_SHORT).show();
             }
         } catch (JSONException e) {
             e.printStackTrace();
             Toast.makeText(weekly_generate.this, "JSON parsing error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
 
     private void downloadAndSaveImage(Exercise2 exercise) {
         String imageUrl = exercise.getImageUrl();

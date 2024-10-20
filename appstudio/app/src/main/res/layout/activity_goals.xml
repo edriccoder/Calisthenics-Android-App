@@ -68,7 +68,7 @@
         android:background="@drawable/button_week"
         android:drawableRight="@drawable/keep_fit"
         android:padding="10dp"
-        android:text="Keep Fit"
+        android:text="Maintain FIT"
         android:textAlignment="viewStart"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"

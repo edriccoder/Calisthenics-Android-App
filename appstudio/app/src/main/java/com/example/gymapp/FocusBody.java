@@ -134,9 +134,10 @@ public class FocusBody extends AppCompatActivity {
                         String exDesc = exerciseObject.getString("exdesc");
                         String exImg = exerciseObject.getString("eximg");
                         String activityValue = exerciseObject.getString("activity_value");
+                        String otherFocus = exerciseObject.getString("other_focus");
 
                         // Add logic to download and save the image
-                        Exercise2 exercise = new Exercise2(exName, exDesc, exImg, activityValue);
+                        Exercise2 exercise = new Exercise2(exName, exDesc, exImg, activityValue, otherFocus);
                         downloadAndSaveImage(exercise); // Download and save the image
 
                         exercises.add(exercise);

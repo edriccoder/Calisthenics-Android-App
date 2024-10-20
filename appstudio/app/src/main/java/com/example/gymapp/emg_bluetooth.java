@@ -79,7 +79,7 @@ public class emg_bluetooth extends AppCompatActivity {
     private ArrayList<Entry> emgEntries = new ArrayList<>();
     private int timeIndex = 0;
     private int stressScore = 0;
-    private int stressThreshold = 150;
+    private int stressThreshold = 210;
 
     private TextView timerTextView;
     private Button startTimerButton;
@@ -331,7 +331,19 @@ public class emg_bluetooth extends AppCompatActivity {
         if (restCountDownTimer != null) {
             restCountDownTimer.cancel();
         }
+        // Remove handler callbacks
+        handler.removeCallbacks(timeTrackerRunnable);
+
+        // Close Bluetooth GATT connection
+        if (bluetoothGatt != null) {
+            bluetoothGatt.close();
+            bluetoothGatt = null;
+        }
+
+        // Shutdown the executor service
+        executorService.shutdownNow();
     }
+
 
 
     private void setupChart() {
@@ -491,10 +503,10 @@ public class emg_bluetooth extends AppCompatActivity {
         runOnUiThread(() -> {
             String emgLevelText;
             int progress;
+            long currentTime = System.currentTimeMillis();
 
             if (emgLevel != currentEmgLevel) {
                 // EMG level has changed
-                long currentTime = System.currentTimeMillis();
                 if (currentEmgLevel != -1 && lastEmgChangeTime != 0) {
                     long elapsedTime = (currentTime - lastEmgChangeTime) / 1000; // Convert to seconds
                     if (elapsedTime > 0) {
@@ -514,8 +526,6 @@ public class emg_bluetooth extends AppCompatActivity {
                             default:
                                 break;
                         }
-                        // Call the insert function here immediately when time changes
-                        insertTimeTrackerData();
                     }
                 }
                 // Update the current level and timestamp
@@ -557,9 +567,12 @@ public class emg_bluetooth extends AppCompatActivity {
 
             // Check if the stress score exceeds the threshold
             if (stressScore >= stressThreshold) {
-                showWarningDialog();
+                if (!isFinishing() && !isDestroyed()) {
+                    showWarningDialog();
+                }
                 stressScore = 0;  // Reset the stress score after showing the dialog
             }
+
         });
     }
 
@@ -650,6 +663,10 @@ public class emg_bluetooth extends AppCompatActivity {
     }
 
     private void showWarningDialog() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
         AlertDialog.Builder builder = new AlertDialog.Builder(emg_bluetooth.this);
         LayoutInflater inflater = getLayoutInflater();
 
@@ -672,4 +689,5 @@ public class emg_bluetooth extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+
 }

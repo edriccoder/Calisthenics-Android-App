@@ -7,19 +7,16 @@ public class Exercise2 implements Serializable {
     private String exDesc;
     private String imageUrl;
     private String activity;
-    private String localImagePath;  // Add this field for storing the local image path
-
-    // Default constructor
-    public Exercise2() {
-        // Initialize fields if needed
-    }
+    private String localImagePath;  // Store local image path
+    private String otherFocus;
 
     // Constructor with parameters
-    public Exercise2(String exName, String exDesc, String imageUrl, String activity) {
+    public Exercise2(String exName, String exDesc, String imageUrl, String activity, String otherFocus) {
         this.exName = exName;
         this.exDesc = exDesc;
         this.imageUrl = imageUrl;
         this.activity = activity;
+        this.otherFocus = otherFocus;
     }
 
     // Getters and setters...
@@ -55,6 +52,14 @@ public class Exercise2 implements Serializable {
         this.activity = activity;
     }
 
+    public String getOtherFocus() {
+        return otherFocus;
+    }
+
+    public void setOtherFocus(String otherFocus) {
+        this.otherFocus = otherFocus;
+    }
+
     public String getLocalImagePath() {
         return localImagePath;
     }
@@ -63,4 +68,3 @@ public class Exercise2 implements Serializable {
         this.localImagePath = localImagePath;
     }
 }
-

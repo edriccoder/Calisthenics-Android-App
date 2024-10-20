@@ -36,7 +36,7 @@ import java.util.Map;
 
 public class ExerciseDetailActivity extends AppCompatActivity {
 
-    private TextView textViewName, textViewDesc, textViewActivity;
+    private TextView textViewName, textViewDesc, textViewActivity, textViewOtherFocus, textViewActivityAfterFocus;
     private ImageView imageViewExercise;
     private Button buttonNext, emgBut;
     private ArrayList<Exercise2> exerciseList;
@@ -50,6 +50,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         textViewName = findViewById(R.id.textViewDetailName);
         textViewDesc = findViewById(R.id.textViewDetailDesc);
         textViewActivity = findViewById(R.id.textViewDetailActivity);
+        textViewOtherFocus = findViewById(R.id.textViewOtherFocus);
         imageViewExercise = findViewById(R.id.imageViewDetailExercise);
         buttonNext = findViewById(R.id.buttonNext);
         emgBut = findViewById(R.id.emgBut);
@@ -87,6 +88,8 @@ public class ExerciseDetailActivity extends AppCompatActivity {
     private void displayExerciseDetails(Exercise2 exercise) {
         textViewName.setText(exercise.getExName() != null ? exercise.getExName() : "No name available");
         textViewDesc.setText(exercise.getExDesc() != null ? exercise.getExDesc() : "No description available");
+        textViewOtherFocus.setText(exercise.getOtherFocus() != null ? exercise.getOtherFocus() : "No name available");
+
         textViewActivity.setText("Activity: " + (exercise.getActivity() != null ? exercise.getActivity() : "Not specified"));
 
         // Load image with Glide
@@ -112,12 +115,14 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         TextView textViewCountdown = dialog.findViewById(R.id.textViewCountdown);
         Button buttonNextExercise = dialog.findViewById(R.id.buttonNextExercise);
         Button buttonSkipExercise = dialog.findViewById(R.id.buttonSkipExercise); // Get reference to Skip button
-
+        TextView labelSets = dialog.findViewById(R.id.labelSets);;
+        TextView labelReps = dialog.findViewById(R.id.labelReps);
         // Set the exercise name
         textViewExerciseName.setText(exerciseList.get(currentPosition).getExName());
 
         String name = exerciseList.get(currentPosition).getExName();
-
+        labelSets.setText("Sets:");
+        labelReps.setText("Reps:");
         // Variable to track remaining time
         final int[] remainingTime = {30}; // Start with 30 seconds
 
