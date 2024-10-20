@@ -79,7 +79,7 @@ public class emg_bluetooth extends AppCompatActivity {
     private ArrayList<Entry> emgEntries = new ArrayList<>();
     private int timeIndex = 0;
     private int stressScore = 0;
-    private int stressThreshold = 100;
+    private int stressThreshold = 150;
 
     private TextView timerTextView;
     private Button startTimerButton;
@@ -514,6 +514,8 @@ public class emg_bluetooth extends AppCompatActivity {
                             default:
                                 break;
                         }
+                        // Call the insert function here immediately when time changes
+                        insertTimeTrackerData();
                     }
                 }
                 // Update the current level and timestamp
@@ -521,6 +523,7 @@ public class emg_bluetooth extends AppCompatActivity {
                 lastEmgChangeTime = currentTime;
             }
 
+            // Set the EMG level gauge and chart updates
             switch (emgLevel) {
                 case 0:
                     emgLevelText = "Below Easy";
@@ -547,19 +550,30 @@ public class emg_bluetooth extends AppCompatActivity {
             emgLevelGauge.setProgress(progress);
             updateChart(emgVal);
 
-            // Log the current counters for debugging
+            // Log for debugging
             Log.d(TAG, "Time - Below Easy: " + belowEasySeconds + "s, Easy: " + easySeconds + "s, Medium: " + mediumSeconds + "s, Hard: " + hardSeconds + "s");
 
-            // Optionally, you can implement logic based on stressScore or thresholds here
+            stressScore += emgLevel;
+
+            // Check if the stress score exceeds the threshold
+            if (stressScore >= stressThreshold) {
+                showWarningDialog();
+                stressScore = 0;  // Reset the stress score after showing the dialog
+            }
         });
     }
 
 
     private void initializeTimeTracker() {
         timeTrackerRunnable = new Runnable() {
+            private long lastUploadTime = 0;
+            private final long uploadInterval = 10000; // Reduce to 10 seconds for more frequent uploads
+
             @Override
             public void run() {
                 long currentTime = System.currentTimeMillis();
+
+                // Check if EMG level has changed and update elapsed time
                 if (currentEmgLevel != -1 && lastEmgChangeTime != 0) {
                     long elapsedTime = (currentTime - lastEmgChangeTime) / 1000; // Convert to seconds
                     if (elapsedTime > 0) {
@@ -582,18 +596,24 @@ public class emg_bluetooth extends AppCompatActivity {
                         lastEmgChangeTime = currentTime;
                     }
                 }
-                handler.postDelayed(this, 1000); // Schedule the next run after 1 second
+
+                // Insert the data more frequently, here every 10 seconds
+                if (currentTime - lastUploadTime >= uploadInterval) {
+                    insertTimeTrackerData();
+                    lastUploadTime = currentTime;
+                }
+
+                handler.postDelayed(this, 1000); // Continue running every second
             }
         };
         handler.post(timeTrackerRunnable); // Start the time tracker
     }
 
-
     private void insertTimeTrackerData() {
         String username = MainActivity.GlobalsLogin.username;
         String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-        // Prepare the data to send to the PHP script
+        // Prepare the data
         HashMap<String, String> data = new HashMap<>();
         data.put("username", username);
         data.put("date", date);
@@ -602,26 +622,54 @@ public class emg_bluetooth extends AppCompatActivity {
         data.put("medium_seconds", String.valueOf(mediumSeconds));
         data.put("hard_seconds", String.valueOf(hardSeconds));
 
+        // Log the data
+        Log.d(TAG, "Inserting data: " + data.toString());
+
         // Convert HashMap to arrays
         String[] keys = data.keySet().toArray(new String[0]);
         String[] values = data.values().toArray(new String[0]);
 
-        // Initialize PutData with the new PHP script URL
         PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insertDurationEMG.php", "POST", keys, values);
 
         // Start the PutData task
         if (putData.startPut()) {
             if (putData.onComplete()) {
                 String result = putData.getResult();
+                Log.d(TAG, "Insert result: " + result);
                 if (result.equals("Success")) {
                     Toast.makeText(this, "Time Tracker data inserted successfully", Toast.LENGTH_SHORT).show();
-
                 } else {
                     Toast.makeText(this, "Error inserting time tracker data: " + result, Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                Log.e(TAG, "PutData onComplete failed");
             }
         } else {
-            Toast.makeText(this, "Failed to start data upload", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "PutData startPut failed");
         }
+    }
+
+    private void showWarningDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(emg_bluetooth.this);
+        LayoutInflater inflater = getLayoutInflater();
+
+        // Inflate the custom layout for the dialog
+        View dialogLayout = inflater.inflate(R.layout.dialog_warning, null);
+        builder.setView(dialogLayout);
+
+        // Find the ImageView and set a warning image
+        ImageView warningImage = dialogLayout.findViewById(R.id.warningImage);
+        warningImage.setImageResource(R.drawable.warning_icon);  // Replace with your warning image resource
+
+        // Set dialog title and message
+        builder.setTitle("Warning: High Stress");
+        builder.setMessage("Muscle stress is too high. Please take a rest for at least 5 minutes.");
+
+        // Add an "OK" button to dismiss the dialog
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+
+        // Show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }

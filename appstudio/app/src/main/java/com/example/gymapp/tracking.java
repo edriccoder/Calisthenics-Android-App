@@ -1,7 +1,7 @@
 package com.example.gymapp;
 
 import android.app.AlertDialog;
-import android.content.res.ColorStateList;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import androidx.fragment.app.Fragment;
@@ -9,20 +9,15 @@ import androidx.fragment.app.Fragment;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.util.Log;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
@@ -32,92 +27,152 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.vishnusivadas.advanced_httpurlconnection.PutData;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class tracking extends Fragment {
-    private TextView workoutCountText, caloriesText, weightLogsText, currentWeightText,
-            exerciseTimeText;  // TextView to display weight logs
+    // UI Components
+    private TextView workoutCountText, caloriesText, currentWeightText, exerciseTimeText;
     private ListView exerciseLogListView;
+    private LineChart weightLogsChart;
+    private Button settingsButton, showEMGDurationButton;
+
+    // Data and Adapters
     private List<ExerciseLog> exerciseLogList;
     private ExerciseLogAdapter exerciseAdapter;
-    private ExerciseLogAdapter adapter;
-    private LineChart weightLogsChart;
-    private Button settingsButton;
+
+    // Networking
+    private OkHttpClient client;
+    private Gson gson;
+
+    // Constants
     private static final String TAG = "TrackingFragment";
+    private static final String GET_EMG_DURATION_URL = "https://calestechsync.dermocura.net/calestechsync/getEMGDuration.php"; // Replace with your actual URL
+
+    // Define the EMGDuration model class to map JSON response
+    private class EMGDuration {
+        private boolean success;
+        private List<String> emg_durations;
+        private String error;
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public List<String> getEmg_durations() {
+            return emg_durations;
+        }
+
+        public String getError() {
+            return error;
+        }
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Initialize OkHttpClient and Gson
+        client = new OkHttpClient();
+        gson = new Gson();
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+        // Inflate the fragment layout
         View view = inflater.inflate(R.layout.fragment_tracking, container, false);
 
+        // Initialize UI components
         workoutCountText = view.findViewById(R.id.workoutCountText);
+        caloriesText = view.findViewById(R.id.workoutCountCalories);
+        currentWeightText = view.findViewById(R.id.currentWeight);
+        exerciseTimeText = view.findViewById(R.id.exerciseTimeText);
         exerciseLogListView = view.findViewById(R.id.exerciseLogListView);
+        weightLogsChart = view.findViewById(R.id.weightChart);
+        settingsButton = view.findViewById(R.id.settingsButton);
+        showEMGDurationButton = view.findViewById(R.id.showEMGDurationButton);
+
+        // Initialize the exercise log list and adapter
         exerciseLogList = new ArrayList<>();
         exerciseAdapter = new ExerciseLogAdapter(getActivity(), exerciseLogList);
         exerciseLogListView.setAdapter(exerciseAdapter);
-        adapter = new ExerciseLogAdapter(getActivity(), exerciseLogList);
-        exerciseLogListView.setAdapter(adapter);
-        exerciseTimeText = view.findViewById(R.id.exerciseTimeText);
-        settingsButton = view.findViewById(R.id.settingsButton);
 
-        caloriesText = view.findViewById(R.id.workoutCountCalories);
-        weightLogsChart = view.findViewById(R.id.weightChart);
-
-        // Initialize the currentWeightText TextView
-        currentWeightText = view.findViewById(R.id.currentWeight);
-        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-        getExerciseTime(todayDate);
-
+        // Set up the Settings button to edit weight
         settingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                // Create an AlertDialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                builder.setTitle("Edit Weight");
-
-                // Create an input field for weight
-                final EditText input = new EditText(getContext());
-                input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                input.setHint("Enter your weight");
-                builder.setView(input);
-
-                // Set up the buttons
-                builder.setPositiveButton("Submit", (dialog, which) -> {
-                    // Get the inputted weight
-                    String weightInput = input.getText().toString();
-
-                    if (!weightInput.isEmpty()) {
-                        // Call the method to send data to the server
-                        sendWeightToServer(weightInput);
-                    } else {
-                        Toast.makeText(getContext(), "Weight cannot be empty", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-
-                // Show the dialog
-                builder.show();
+            public void onClick(View view) {
+                showEditWeightDialog();
             }
         });
 
+        // Set up the Show EMG Duration button
+        showEMGDurationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showEMGDurationModal();
+            }
+        });
 
-        // Fetch data
+        // Fetch and display data
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        getExerciseTime(todayDate);
         getExerciseCount();
         getExerciseLogs();
         getCaloriesBurned(todayDate);
         getWeightLogs();
-        getCurrentWeight();// Fetch weight logs and display current weight
-
+        getCurrentWeight();
 
         return view;
     }
 
+    private void showEditWeightDialog() {
+        // Create an AlertDialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Edit Weight");
+
+        // Create an input field for weight
+        final EditText input = new EditText(getContext());
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setHint("Enter your weight (kg)");
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton("Submit", (dialog, which) -> {
+            // Get the inputted weight
+            String weightInput = input.getText().toString();
+
+            if (!weightInput.isEmpty()) {
+                // Call the method to send data to the server
+                sendWeightToServer(weightInput);
+            } else {
+                Toast.makeText(getContext(), "Weight cannot be empty", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+
+        // Show the dialog
+        builder.show();
+    }
 
     private void sendWeightToServer(String weight) {
         Handler handler = new Handler(Looper.getMainLooper());
@@ -125,14 +180,19 @@ public class tracking extends Fragment {
             String username = MainActivity.GlobalsLogin.username;
             String logDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
+            // Define the form fields and data
             String[] field = {"username", "weight", "log_date"};
             String[] data = {username, weight, logDate};
 
+            // Initialize PutData for the network request
             PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/insertWeightLogs.php", "POST", field, data);
             if (putData.startPut() && putData.onComplete()) {
                 String result = putData.getResult();
                 Log.d(TAG, "Server response: " + result);
                 Toast.makeText(getContext(), result, Toast.LENGTH_SHORT).show();
+
+                // Optionally, refresh current weight display
+                getCurrentWeight();
             } else {
                 Toast.makeText(getContext(), "Failed to submit weight", Toast.LENGTH_SHORT).show();
             }
@@ -181,202 +241,190 @@ public class tracking extends Fragment {
         });
     }
 
-    private void getCaloriesBurned(String date) { // Pass date as a parameter
+    private void getCaloriesBurned(String date) {
         Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String username = MainActivity.GlobalsLogin.username;
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
 
-                // Add the date field to the request
-                String[] field = {"username", "date"};
-                String[] data = {username, date}; // Pass the username and date
+            // Define the fields and data for the POST request
+            String[] field = {"username", "date"};
+            String[] data = {username, date};
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getTotalCaloriesBurned.php", "POST", field, data);
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getTotalCaloriesBurned.php", "POST", field, data);
 
-                if (putData.startPut() && putData.onComplete()) {
-                    String result = putData.getResult();
-                    Log.d(TAG, "Server response: " + result);
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
 
-                    try {
-                        JSONObject responseJson = new JSONObject(result);
+                try {
+                    JSONObject responseJson = new JSONObject(result);
 
-                        // Check for any error in the response
-                        if (responseJson.has("success") && responseJson.getBoolean("success")) {
-                            // Get the total calories burned
-                            float totalCalories = (float) responseJson.getDouble("total_calories");
-                            caloriesText.setText(String.valueOf(totalCalories));
-                        } else {
-                            String errorMessage = responseJson.getString("message");
-                            Log.e(TAG, errorMessage);
-                            Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "JSON Parsing error: " + result, e);
-                        Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                    // Check for any error in the response
+                    if (responseJson.has("success") && responseJson.getBoolean("success")) {
+                        // Get the total calories burned
+                        float totalCalories = (float) responseJson.getDouble("total_calories");
+                        caloriesText.setText(String.valueOf(totalCalories));
+                    } else {
+                        String errorMessage = responseJson.getString("message");
+                        Log.e(TAG, errorMessage);
+                        Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    String errorMsg = "Failed to complete request";
-                    Log.e(TAG, errorMsg);
-                    Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "JSON Parsing error: " + result, e);
+                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                String errorMsg = "Failed to complete request";
+                Log.e(TAG, errorMsg);
+                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-
     private void getExerciseCount() {
         Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String username = MainActivity.GlobalsLogin.username;
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
 
-                String[] field = {"username"};
-                String[] data = {username};
+            String[] field = {"username"};
+            String[] data = {username};
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/get_exercise_count.php", "POST", field, data);
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/get_exercise_count.php", "POST", field, data);
 
-                if (putData.startPut() && putData.onComplete()) {
-                    String result = putData.getResult();
-                    Log.d(TAG, "Server response: " + result);
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
 
-                    try {
-                        JSONObject responseJson = new JSONObject(result);
+                try {
+                    JSONObject responseJson = new JSONObject(result);
 
-                        if (responseJson.has("error")) {
-                            String errorMessage = responseJson.getString("error");
-                            Log.e(TAG, errorMessage);
-                            Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_SHORT).show();
-                        } else {
-                            int exerciseCount = responseJson.getInt("exercise_count");
-                            workoutCountText.setText(String.valueOf(exerciseCount));
-
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "JSON Parsing error: " + result, e);
-                        Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                    if (responseJson.has("error")) {
+                        String errorMessage = responseJson.getString("error");
+                        Log.e(TAG, errorMessage);
+                        Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_SHORT).show();
+                    } else {
+                        int exerciseCount = responseJson.getInt("exercise_count");
+                        workoutCountText.setText(String.valueOf(exerciseCount));
                     }
-                } else {
-                    String errorMsg = "Failed to complete request";
-                    Log.e(TAG, errorMsg);
-                    Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "JSON Parsing error: " + result, e);
+                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                String errorMsg = "Failed to complete request";
+                Log.e(TAG, errorMsg);
+                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void getExerciseLogs() {
         Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String username = MainActivity.GlobalsLogin.username;
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
 
-                String[] field = {"username"};
-                String[] data = {username};
+            String[] field = {"username"};
+            String[] data = {username};
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/get_exercise_logs.php", "POST", field, data);
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/get_exercise_logs.php", "POST", field, data);
 
-                if (putData.startPut() && putData.onComplete()) {
-                    String result = putData.getResult();
-                    Log.d(TAG, "Server response: " + result);
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
 
-                    try {
-                        JSONArray jsonArray = new JSONArray(result);
-                        exerciseLogList.clear();
+                try {
+                    JSONArray jsonArray = new JSONArray(result);
+                    exerciseLogList.clear();
 
-                        for (int i = 0; i < jsonArray.length(); i++) {
-                            JSONObject logEntry = jsonArray.getJSONObject(i);
-                            String exerciseName = logEntry.getString("exercise_name");
-                            int sets = logEntry.getInt("sets");
-                            int reps = logEntry.getInt("reps");
-                            String logDate = logEntry.getString("log_date");
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject logEntry = jsonArray.getJSONObject(i);
+                        String exerciseName = logEntry.getString("exercise_name");
+                        int sets = logEntry.getInt("sets");
+                        int reps = logEntry.getInt("reps");
+                        String logDate = logEntry.getString("log_date");
 
-                            ExerciseLog exerciseLog = new ExerciseLog(exerciseName, sets, reps, logDate);
-                            exerciseLogList.add(exerciseLog);
-                        }
-                        adapter.notifyDataSetChanged();
-
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "JSON Parsing error: " + result, e);
-                        Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                        ExerciseLog exerciseLog = new ExerciseLog(exerciseName, sets, reps, logDate);
+                        exerciseLogList.add(exerciseLog);
                     }
-                } else {
-                    String errorMsg = "Failed to complete request";
-                    Log.e(TAG, errorMsg);
-                    Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                    exerciseAdapter.notifyDataSetChanged();
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "JSON Parsing error: " + result, e);
+                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                String errorMsg = "Failed to complete request";
+                Log.e(TAG, errorMsg);
+                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void getWeightLogs() {
         Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String username = MainActivity.GlobalsLogin.username;
-                String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
+            String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-                String[] field = {"username", "log_date"};
-                String[] data = {username, date};
+            String[] field = {"username", "log_date"};
+            String[] data = {username, date};
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/executeWeightQuery.php", "POST", field, data);
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/executeWeightQuery.php", "POST", field, data);
 
-                if (putData.startPut() && putData.onComplete()) {
-                    String result = putData.getResult();
-                    Log.d(TAG, "Server response: " + result);
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
 
-                    try {
-                        JSONObject responseJson = new JSONObject(result);
-                        String status = responseJson.getString("status");
+                try {
+                    JSONObject responseJson = new JSONObject(result);
+                    String status = responseJson.getString("status");
 
-                        if (status.equals("success")) {
-                            JSONArray weightLogs = responseJson.getJSONArray("weight_logs");
-                            ArrayList<Entry> weightEntries = new ArrayList<>();
-                            ArrayList<String> logDates = new ArrayList<>();
+                    if (status.equals("success")) {
+                        JSONArray weightLogs = responseJson.getJSONArray("weight_logs");
+                        ArrayList<Entry> weightEntries = new ArrayList<>();
+                        ArrayList<String> logDates = new ArrayList<>();
 
-                            // Build chart data
-                            for (int i = 0; i < weightLogs.length(); i++) {
-                                JSONObject logEntry = weightLogs.getJSONObject(i);
-                                double weight = logEntry.getDouble("weight");
-                                String logDate = logEntry.getString("log_date");
+                        // Build chart data
+                        for (int i = 0; i < weightLogs.length(); i++) {
+                            JSONObject logEntry = weightLogs.getJSONObject(i);
+                            double weight = logEntry.getDouble("weight");
+                            String logDate = logEntry.getString("log_date");
 
-                                logDates.add(logDate);
-                                weightEntries.add(new Entry(i, (float) weight));
-                            }
-
-                            // Update the chart with the weight data
-                            setWeightLogsChart(weightEntries, logDates);
-                        } else {
-                            String message = responseJson.getString("message");
-                            Log.e(TAG, message);
-                            Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+                            logDates.add(logDate);
+                            weightEntries.add(new Entry(i, (float) weight));
                         }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "JSON Parsing error: " + result, e);
-                        Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+
+                        // Update the chart with the weight data
+                        setWeightLogsChart(weightEntries, logDates);
+                    } else {
+                        String message = responseJson.getString("message");
+                        Log.e(TAG, message);
+                        Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    String errorMsg = "Failed to complete request";
-                    Log.e(TAG, errorMsg);
-                    Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "JSON Parsing error: " + result, e);
+                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                String errorMsg = "Failed to complete request";
+                Log.e(TAG, errorMsg);
+                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-
-    // Method to configure and display the weight logs on the chart
     private void setWeightLogsChart(ArrayList<Entry> weightEntries, final ArrayList<String> logDates) {
         LineDataSet dataSet = new LineDataSet(weightEntries, "Weight over Time");
         dataSet.setColor(ColorTemplate.MATERIAL_COLORS[0]);
         dataSet.setValueTextColor(Color.BLACK);
+        dataSet.setLineWidth(2f);
+        dataSet.setCircleRadius(4f);
+        dataSet.setCircleColor(ColorTemplate.MATERIAL_COLORS[0]);
+        dataSet.setDrawValues(false); // Hide values for cleaner look
 
         LineData lineData = new LineData(dataSet);
         weightLogsChart.setData(lineData);
@@ -417,11 +465,12 @@ public class tracking extends Fragment {
         weightLogsChart.setExtraBottomOffset(40f); // Adds extra space below the chart
 
         // Customize the legend and position it below the X-axis
-        weightLogsChart.getLegend().setEnabled(true); // Enable the legend
-        weightLogsChart.getLegend().setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM); // Set legend to the bottom
-        weightLogsChart.getLegend().setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER); // Center the legend
-        weightLogsChart.getLegend().setOrientation(Legend.LegendOrientation.HORIZONTAL); // Make the legend horizontal
-        weightLogsChart.getLegend().setDrawInside(false); // Make sure the legend is drawn outside the chart bounds
+        Legend legend = weightLogsChart.getLegend();
+        legend.setEnabled(true); // Enable the legend
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM); // Set legend to the bottom
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER); // Center the legend
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL); // Make the legend horizontal
+        legend.setDrawInside(false); // Make sure the legend is drawn outside the chart bounds
 
         // Refresh the chart
         weightLogsChart.invalidate();
@@ -429,51 +478,46 @@ public class tracking extends Fragment {
 
     private void getExerciseTime(String logDate) {
         Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String username = MainActivity.GlobalsLogin.username;
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
 
-                String[] field = {"username", "log_date"};
-                String[] data = {username, logDate};
+            String[] field = {"username", "log_date"};
+            String[] data = {username, logDate};
 
-                PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getExerciseTime.php", "POST", field, data);
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getExerciseTime.php", "POST", field, data);
 
-                if (putData.startPut() && putData.onComplete()) {
-                    String result = putData.getResult();
-                    Log.d(TAG, "Server response: " + result);
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
 
-                    try {
-                        JSONObject responseJson = new JSONObject(result);
-                        String status = responseJson.getString("status");
+                try {
+                    JSONObject responseJson = new JSONObject(result);
+                    String status = responseJson.getString("status");
 
-                        if (status.equals("success")) {
-                            int exerciseTime = responseJson.getInt("exerciseTime");
-                            // Convert seconds to a more readable format, e.g., HH:mm:ss
-                            String formattedTime = formatSecondsToTime(exerciseTime);
-                            // Display the exercise time (You might need to add a TextView for this)
-                            exerciseTimeText.setText(formattedTime);
-                            Toast.makeText(getActivity(), formattedTime, Toast.LENGTH_SHORT).show();
-                        } else {
-                            String message = responseJson.getString("message");
-                            Log.e(TAG, message);
-                            Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "JSON Parsing error: " + result, e);
-                        Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                    if (status.equals("success")) {
+                        int exerciseTime = responseJson.getInt("exerciseTime");
+                        // Convert seconds to a more readable format, e.g., HH:mm:ss
+                        String formattedTime = formatSecondsToTime(exerciseTime);
+                        // Display the exercise time
+                        exerciseTimeText.setText(formattedTime);
+                    } else {
+                        String message = responseJson.getString("message");
+                        Log.e(TAG, message);
+                        Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    String errorMsg = "Failed to complete request";
-                    Log.e(TAG, errorMsg);
-                    Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "JSON Parsing error: " + result, e);
+                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                String errorMsg = "Failed to complete request";
+                Log.e(TAG, errorMsg);
+                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    // Helper method to format seconds into HH:mm:ss
     private String formatSecondsToTime(int seconds) {
         int hrs = seconds / 3600;
         int mins = (seconds % 3600) / 60;
@@ -481,5 +525,86 @@ public class tracking extends Fragment {
         return String.format(Locale.getDefault(), "%02d:%02d:%02d", hrs, mins, secs);
     }
 
-}
+    private void showEMGDurationModal() {
+        // Inflate the modal layout
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        View modalView = inflater.inflate(R.layout.emg_duration_dialog, null);
 
+        // Initialize modal views
+        TextView belowEasyText = modalView.findViewById(R.id.belowEasyTextModal);
+        TextView easyText = modalView.findViewById(R.id.easyTextModal);
+        TextView mediumText = modalView.findViewById(R.id.mediumTextModal);
+        TextView hardText = modalView.findViewById(R.id.hardTextModal);
+        Button closeModalButton = modalView.findViewById(R.id.closeModalButton);
+
+        // Create the AlertDialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(modalView);
+        AlertDialog dialog = builder.create();
+
+        // Show the dialog
+        dialog.show();
+
+        // Fetch EMG Duration Data
+        fetchEMGDurationData(belowEasyText, easyText, mediumText, hardText, dialog);
+
+        // Set close button functionality
+        closeModalButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+    }
+
+    private void fetchEMGDurationData(TextView belowEasy, TextView easy, TextView medium, TextView hard, AlertDialog dialog) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            String username = MainActivity.GlobalsLogin.username;
+            String date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+            // Define the fields and data for the POST request
+            String[] field = {"username", "date"};
+            String[] data = {username, date};
+
+            // Initialize PutData for the network request
+            PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/getEMGDuration.php", "POST", field, data);
+
+            if (putData.startPut() && putData.onComplete()) {
+                String result = putData.getResult();
+                Log.d(TAG, "Server response: " + result);
+
+                try {
+                    // Parse the JSON response
+                    JSONObject responseJson = new JSONObject(result);
+
+                    // Check for "success" in the response
+                    if (responseJson.getBoolean("success")) {
+                        // Retrieve EMG duration data as an object
+                        JSONObject emgDurations = responseJson.getJSONObject("emg_durations");
+
+                        // Set the values for belowEasy, easy, medium, and hard TextViews
+                        belowEasy.setText("Below Easy: " + emgDurations.getDouble("below_easy_seconds") + " seconds");
+                        easy.setText("Easy: " + emgDurations.getDouble("easy_seconds") + " seconds");
+                        medium.setText("Medium: " + emgDurations.getDouble("medium_seconds") + " seconds");
+                        hard.setText("Hard: " + emgDurations.getDouble("hard_seconds") + " seconds");
+                    } else {
+                        // Handle error in case of no success
+                        String message = responseJson.getString("error");
+                        Log.e(TAG, message);
+                        Toast.makeText(getActivity(), message, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "JSON Parsing error: " + result, e);
+                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                String errorMsg = "Failed to complete request";
+                Log.e(TAG, errorMsg);
+                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+}

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/emgDurationModalLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/emgModalTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="EMG Duration Details"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/belowEasyTextModal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Below Easy: Loading..."
+        android:textSize="16sp"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/easyTextModal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Easy: Loading..."
+        android:textSize="16sp"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/mediumTextModal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Medium: Loading..."
+        android:textSize="16sp"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/hardTextModal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hard: Loading..."
+        android:textSize="16sp"
+        android:paddingBottom="16dp"/>
+
+    <Button
+        android:id="@+id/closeModalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Close"
+        android:layout_gravity="center_horizontal"
+        android:padding="8dp"
+        android:backgroundTint="@color/accentColor"
+        android:textColor="#FFFFFF"/>
+
+</LinearLayout>
