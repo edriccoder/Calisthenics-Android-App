@@ -1,6 +1,7 @@
 package com.example.gymapp;
 
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
@@ -36,11 +38,13 @@ import java.util.Map;
 
 public class ExerciseDetailActivity extends AppCompatActivity {
 
-    private TextView textViewName, textViewDesc, textViewActivity, textViewOtherFocus, textViewActivityAfterFocus;
+    private TextView textViewName, textViewDesc, textViewActivity, textViewOtherFocus, textViewActivityAfterFocus, emg;
     private ImageView imageViewExercise;
     private Button buttonNext, emgBut;
     private ArrayList<Exercise2> exerciseList;
     private int currentPosition;
+    private static final String GET_FOCUS_URL = "https://calestechsync.dermocura.net/calestechsync/getFocusByExname.php";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +58,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         imageViewExercise = findViewById(R.id.imageViewDetailExercise);
         buttonNext = findViewById(R.id.buttonNext);
         emgBut = findViewById(R.id.emgBut);
+        emg = findViewById(R.id.emg);
 
         Intent intent = getIntent();
         exerciseList = (ArrayList<Exercise2>) intent.getSerializableExtra("exerciseList");
@@ -64,6 +69,16 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Exercise data is not available", Toast.LENGTH_SHORT).show();
         }
+
+        emg.setOnClickListener(v -> {
+            String exerciseName = textViewName.getText().toString().trim();
+            if (!exerciseName.isEmpty()) {
+                getFocusByExname(exerciseName);
+            } else {
+                Toast.makeText(this, "Exercise name is not available", Toast.LENGTH_SHORT).show();
+            }
+        });
+
 
 
         // Button to move to the next exercise
@@ -376,5 +391,114 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         RequestQueue requestQueue = Volley.newRequestQueue(this);
         requestQueue.add(stringRequest);
     }
+
+    private void getFocusByExname(String exName) {
+        // Show a loading dialog
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Fetching EMG Focus...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        // Create a POST request using Volley
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, GET_FOCUS_URL,
+                response -> {
+                    progressDialog.dismiss();
+                    Log.d("ServerResponse", "Response: " + response); // Log the response for debugging
+
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+
+                        // Check if 'exercises' key exists
+                        if (jsonResponse.has("exercises")) {
+                            JSONArray exercises = jsonResponse.getJSONArray("exercises");
+
+                            if (exercises.length() > 0) {
+                                JSONObject exercise = exercises.getJSONObject(0); // Assuming first match
+
+                                // Check if 'focus_area' key exists
+                                if (exercise.has("focus_area")) {
+                                    String focusArea = exercise.getString("focus_area");
+                                    showEmgModal(focusArea);
+                                } else {
+                                    Toast.makeText(this, "Focus area not specified.", Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                // Empty 'exercises' array
+                                if (jsonResponse.has("error")) {
+                                    String error = jsonResponse.getString("error");
+                                    Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(this, "No focus area found for this exercise.", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        } else if (jsonResponse.has("error")) {
+                            String error = jsonResponse.getString("error");
+                            Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Unexpected response from server.", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(this, "Error parsing server response.", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(this, "Network error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("exname", exName);
+                return params;
+            }
+        };
+
+        // Set a retry policy in case of SocketTimeout & ConnectionTimeout Exceptions.
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                5000,
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+        // Add the request to the RequestQueue.
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
+        requestQueue.add(stringRequest);
+    }
+
+    private void showEmgModal(String focusArea) {
+        // Map focus areas to drawable resource IDs
+        Map<String, Integer> focusDrawableMap = new HashMap<>();
+        focusDrawableMap.put("Chest", R.drawable.emgchest);
+        focusDrawableMap.put("Arms", R.drawable.arm);
+        focusDrawableMap.put("Legs", R.drawable.emglegs);
+        focusDrawableMap.put("Abs", R.drawable.emgcore);
+        focusDrawableMap.put("Back", R.drawable.arm);
+
+        Integer drawableRes = focusDrawableMap.get(focusArea);
+
+        if (drawableRes == null) {
+            Toast.makeText(this, "Unknown focus area: " + focusArea, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Create and show the dialog
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_emg_focus);
+        dialog.setCancelable(true);
+
+        ImageView imageView = dialog.findViewById(R.id.imageViewEmgFocus);
+        TextView textViewFocus = dialog.findViewById(R.id.textViewFocusArea);
+        Button buttonClose = dialog.findViewById(R.id.buttonClose);
+
+        imageView.setImageResource(drawableRes);
+        textViewFocus.setText(focusArea + " EMG");
+
+        buttonClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+
 
 }

@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.Toast;
+import android.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -32,6 +33,13 @@ public class focus extends AppCompatActivity {
         but4 = findViewById(R.id.but4);
         but5 = findViewById(R.id.but5);
         but6 = findViewById(R.id.but6);
+
+        findViewById(R.id.fullbody_info).setOnClickListener(v -> showInfoDialog("Full Body", "Includes all major muscle groups."));
+        findViewById(R.id.arm_info).setOnClickListener(v -> showInfoDialog("Arms", "Focus on arms, including biceps, triceps, and forearms."));
+        findViewById(R.id.chest_info).setOnClickListener(v -> showInfoDialog("Chest", "Focus on the chest muscles, including pectorals."));
+        findViewById(R.id.abs_info).setOnClickListener(v -> showInfoDialog("Abs", "Focus on abdominal muscles, including core stability."));
+        findViewById(R.id.legs_info).setOnClickListener(v -> showInfoDialog("Legs", "Focus on leg muscles, including quads, hamstrings, and calves."));
+        findViewById(R.id.back_info).setOnClickListener(v -> showInfoDialog("Back", "Focus on back muscles, including lats and lower back."));
 
         Arrays.fill(buttonStates, false);
 
@@ -107,6 +115,15 @@ public class focus extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    private void showInfoDialog(String title, String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                .create()
+                .show();
     }
 
     private void toggleButtonState() {

@@ -47,7 +47,7 @@ public class setting extends Fragment {
             @Override
             public void onClick(View v) {
                 // Open the feedback link in the user's default web browser
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://calestechsync.dermocura.net/feedback.php"));
+                Intent intent = new Intent(getContext(), messege.class);
                 startActivity(intent);
             }
         });

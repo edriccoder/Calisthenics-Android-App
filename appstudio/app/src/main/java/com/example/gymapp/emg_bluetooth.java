@@ -27,9 +27,11 @@ import android.os.Looper;
 import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -249,14 +251,23 @@ public class emg_bluetooth extends AppCompatActivity {
         builder.setTitle("Rest Time");
         builder.setMessage("You need to rest for 30 seconds.");
 
-        // Create a custom view for the rest timer
+        // Create a custom view for the rest timer within a FrameLayout to center the text
+        final FrameLayout frameLayout = new FrameLayout(this);
         final TextView restTimerTextView = new TextView(this);
-        restTimerTextView.setText("30");
-        restTimerTextView.setTextSize(24);
-        restTimerTextView.setPadding(20, 20, 20, 20);
-        restTimerTextView.setGravity(View.TEXT_ALIGNMENT_CENTER);
 
-        builder.setView(restTimerTextView);
+        // Style the timer text view
+        restTimerTextView.setText("30");
+        restTimerTextView.setTextSize(48); // Larger text size for emphasis
+        restTimerTextView.setPadding(50, 50, 50, 50); // Add padding around the text
+        restTimerTextView.setGravity(Gravity.CENTER); // Center text within the view
+        restTimerTextView.setTextColor(Color.BLACK); // Set text color
+
+        // Set background color and padding for FrameLayout to center TextView within dialog
+        frameLayout.setPadding(20, 40, 20, 40); // Add some padding around the timer
+        frameLayout.setBackgroundColor(Color.LTGRAY); // Light gray background
+        frameLayout.addView(restTimerTextView);
+
+        builder.setView(frameLayout);
 
         builder.setCancelable(false);
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
@@ -343,8 +354,6 @@ public class emg_bluetooth extends AppCompatActivity {
         // Shutdown the executor service
         executorService.shutdownNow();
     }
-
-
 
     private void setupChart() {
 

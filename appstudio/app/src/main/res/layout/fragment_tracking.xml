@@ -39,7 +39,7 @@
                 android:layout_marginEnd="16dp"
                 android:background="@null"
                 android:textColor="@color/accentColor"
-                android:text="Edit Weight Today" />
+                android:text="Weight In Today" />
         </LinearLayout>
 
         <androidx.cardview.widget.CardView
@@ -195,12 +195,41 @@
             android:dividerHeight="10sp"
             android:padding="16dp" />
 
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/weightChart"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:layout_margin="16dp"
-            app:layout_constraintTop_toBottomOf="@+id/exerciseLogListView" />
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp">
+
+            <!-- Y-axis label ("Weight") on the left of the chart -->
+            <TextView
+                android:id="@+id/yAxisLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:rotation="-90"
+                android:text="Weight"
+                android:textColor="#000000" />
+
+            <!-- Line chart -->
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/weightChart"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_toEndOf="@id/yAxisLabel"
+                android:layout_marginStart="8dp" />
+
+            <!-- X-axis label ("Date") below the chart -->
+            <TextView
+                android:id="@+id/xAxisLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/weightChart"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="8dp"
+                android:text="Date"
+                android:textColor="#000000" />
+        </RelativeLayout>
 
         <Button
             android:id="@+id/showEMGDurationButton"

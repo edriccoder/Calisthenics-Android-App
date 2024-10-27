@@ -11,6 +11,7 @@ import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -26,6 +27,9 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.ChartTouchListener;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -426,6 +430,10 @@ public class tracking extends Fragment {
         dataSet.setCircleColor(ColorTemplate.MATERIAL_COLORS[0]);
         dataSet.setDrawValues(false); // Hide values for cleaner look
 
+        // Set the highlight color to red
+        dataSet.setHighlightEnabled(true);
+        dataSet.setHighLightColor(Color.RED); // Set highlight (crosshair) color to red
+
         LineData lineData = new LineData(dataSet);
         weightLogsChart.setData(lineData);
 
@@ -438,19 +446,18 @@ public class tracking extends Fragment {
         xAxis.setDrawGridLines(false);
 
         // Rotate the X-axis labels for better visibility
-        xAxis.setLabelRotationAngle(-45f);  // Rotates the labels 45 degrees
-        xAxis.setGranularity(1f);           // Ensure it labels each data point
+        xAxis.setLabelRotationAngle(-45f);
+        xAxis.setGranularity(1f);
 
         // Set custom value formatter for X-axis to show dates
         xAxis.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                // Return the corresponding log date for the given index (value)
                 int index = (int) value;
                 if (index >= 0 && index < logDates.size()) {
                     return logDates.get(index);
                 } else {
-                    return ""; // If out of bounds, return empty string
+                    return "";
                 }
             }
         });
@@ -461,20 +468,53 @@ public class tracking extends Fragment {
         YAxis rightAxis = weightLogsChart.getAxisRight();
         rightAxis.setEnabled(false);
 
-        // Increase bottom padding to avoid overlapping of the X-axis labels and legend
-        weightLogsChart.setExtraBottomOffset(40f); // Adds extra space below the chart
+        weightLogsChart.setExtraBottomOffset(40f);
 
-        // Customize the legend and position it below the X-axis
         Legend legend = weightLogsChart.getLegend();
-        legend.setEnabled(true); // Enable the legend
-        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM); // Set legend to the bottom
-        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER); // Center the legend
-        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL); // Make the legend horizontal
-        legend.setDrawInside(false); // Make sure the legend is drawn outside the chart bounds
+        legend.setEnabled(true);
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(false);
+
+        // Add a listener to highlight when tapped
+        weightLogsChart.setOnChartGestureListener(new OnChartGestureListener() {
+            @Override
+            public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+
+            @Override
+            public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+
+            @Override
+            public void onChartLongPressed(MotionEvent me) {}
+
+            @Override
+            public void onChartDoubleTapped(MotionEvent me) {}
+
+            @Override
+            public void onChartSingleTapped(MotionEvent me) {
+                // Enable highlight on click
+                Highlight highlight = weightLogsChart.getHighlightByTouchPoint(me.getX(), me.getY());
+                if (highlight != null) {
+                    weightLogsChart.highlightValue(highlight); // Highlight with red color
+                }
+            }
+
+            @Override
+            public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
+
+            @Override
+            public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
+
+            @Override
+            public void onChartTranslate(MotionEvent me, float dX, float dY) {}
+        });
 
         // Refresh the chart
         weightLogsChart.invalidate();
     }
+
+
 
     private void getExerciseTime(String logDate) {
         Handler handler = new Handler(Looper.getMainLooper());
