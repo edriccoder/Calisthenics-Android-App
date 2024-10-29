@@ -2,6 +2,7 @@ package com.example.gymapp;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import androidx.fragment.app.Fragment;
@@ -58,7 +59,7 @@ public class tracking extends Fragment {
     private TextView workoutCountText, caloriesText, currentWeightText, exerciseTimeText;
     private ListView exerciseLogListView;
     private LineChart weightLogsChart;
-    private Button settingsButton, showEMGDurationButton;
+    private Button settingsButton, showEMGDurationButton, showExerciseLogs, showAllLogsButton;
 
     // Data and Adapters
     private List<ExerciseLog> exerciseLogList;
@@ -114,6 +115,8 @@ public class tracking extends Fragment {
         weightLogsChart = view.findViewById(R.id.weightChart);
         settingsButton = view.findViewById(R.id.settingsButton);
         showEMGDurationButton = view.findViewById(R.id.showEMGDurationButton);
+        showExerciseLogs = view.findViewById(R.id.showExerciseLogs);
+        showAllLogsButton = view.findViewById(R.id.showAllLogsButton);
 
         // Initialize the exercise log list and adapter
         exerciseLogList = new ArrayList<>();
@@ -136,16 +139,79 @@ public class tracking extends Fragment {
             }
         });
 
+        showExerciseLogs.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showExerciseLogsDialog();
+            }
+        });
+
+        showAllLogsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), exercise_logs.class);
+                startActivity(intent);
+
+            }
+        });
+
         // Fetch and display data
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         getExerciseTime(todayDate);
         getExerciseCount();
-        getExerciseLogs();
         getCaloriesBurned(todayDate);
         getWeightLogs();
         getCurrentWeight();
 
         return view;
+    }
+
+    private void showExerciseLogsDialog() {
+        // Inflate the dialog layout
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        View dialogView = inflater.inflate(R.layout.exercise_logs_dialog, null);
+
+        // Initialize dialog UI components
+        ListView dialogListView = dialogView.findViewById(R.id.dialogExerciseLogListView);
+        Button closeDialogButton = dialogView.findViewById(R.id.closeDialogButton);
+
+        // Initialize a separate list and adapter for the dialog
+        List<ExerciseLog> dialogExerciseLogList = new ArrayList<>();
+        ExerciseLogAdapter dialogAdapter = new ExerciseLogAdapter(getActivity(), dialogExerciseLogList);
+        dialogListView.setAdapter(dialogAdapter);
+
+        // Build the AlertDialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setView(dialogView);
+        builder.setCancelable(false); // Prevent dialog from closing on outside touch
+
+        AlertDialog dialog = builder.create();
+
+        // Set up the Close button
+        closeDialogButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        // Fetch exercise logs and populate the dialog's ListView
+        getExerciseLogs(new ExerciseLogsCallback() {
+            @Override
+            public void onSuccess(List<ExerciseLog> logs) {
+                dialogExerciseLogList.clear();
+                dialogExerciseLogList.addAll(logs);
+                dialogAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Show the dialog
+        dialog.show();
     }
 
     private void showEditWeightDialog() {
@@ -324,13 +390,14 @@ public class tracking extends Fragment {
         });
     }
 
-    private void getExerciseLogs() {
+    private void getExerciseLogs(ExerciseLogsCallback callback) {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(() -> {
             String username = MainActivity.GlobalsLogin.username;
+            String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-            String[] field = {"username"};
-            String[] data = {username};
+            String[] field = {"username", "log_date"};
+            String[] data = {username, todayDate};
 
             PutData putData = new PutData("https://calestechsync.dermocura.net/calestechsync/get_exercise_logs.php", "POST", field, data);
 
@@ -340,7 +407,7 @@ public class tracking extends Fragment {
 
                 try {
                     JSONArray jsonArray = new JSONArray(result);
-                    exerciseLogList.clear();
+                    List<ExerciseLog> logs = new ArrayList<>();
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject logEntry = jsonArray.getJSONObject(i);
@@ -350,21 +417,31 @@ public class tracking extends Fragment {
                         String logDate = logEntry.getString("log_date");
 
                         ExerciseLog exerciseLog = new ExerciseLog(exerciseName, sets, reps, logDate);
-                        exerciseLogList.add(exerciseLog);
+                        logs.add(exerciseLog);
                     }
-                    exerciseAdapter.notifyDataSetChanged();
+
+                    // Return the logs via the callback
+                    callback.onSuccess(logs);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
                     Log.e(TAG, "JSON Parsing error: " + result, e);
-                    Toast.makeText(getActivity(), "Error parsing server response", Toast.LENGTH_SHORT).show();
+                    callback.onFailure("Error parsing server response");
                 }
             } else {
                 String errorMsg = "Failed to complete request";
                 Log.e(TAG, errorMsg);
-                Toast.makeText(getActivity(), errorMsg, Toast.LENGTH_SHORT).show();
+                callback.onFailure(errorMsg);
             }
         });
+    }
+
+    /**
+     * Callback interface for fetching exercise logs.
+     */
+    private interface ExerciseLogsCallback {
+        void onSuccess(List<ExerciseLog> logs);
+        void onFailure(String errorMessage);
     }
 
     private void getWeightLogs() {
@@ -624,7 +701,7 @@ public class tracking extends Fragment {
                         JSONObject emgDurations = responseJson.getJSONObject("emg_durations");
 
                         // Set the values for belowEasy, easy, medium, and hard TextViews
-                        belowEasy.setText("Below Easy: " + emgDurations.getDouble("below_easy_seconds") + " seconds");
+                        belowEasy.setText("Minimal Effort: " + emgDurations.getDouble("below_easy_seconds") + " seconds");
                         easy.setText("Easy: " + emgDurations.getDouble("easy_seconds") + " seconds");
                         medium.setText("Medium: " + emgDurations.getDouble("medium_seconds") + " seconds");
                         hard.setText("Hard: " + emgDurations.getDouble("hard_seconds") + " seconds");

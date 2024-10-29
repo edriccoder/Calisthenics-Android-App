@@ -545,7 +545,7 @@ public class emg_bluetooth extends AppCompatActivity {
             // Set the EMG level gauge and chart updates
             switch (emgLevel) {
                 case 0:
-                    emgLevelText = "Below Easy";
+                    emgLevelText = "Minimal Effort";
                     progress = 0;
                     break;
                 case 1:

@@ -2,6 +2,7 @@ package com.example.gymapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,6 +15,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,7 +35,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -110,6 +111,7 @@ public class home extends Fragment {
         // Check if the username is not null or empty before proceeding
         if (username != null && !username.isEmpty()) {
             fetchWeeklyPlan(username);
+            fetchUserLevel(username); // Fetch user level to update button states
         } else {
             Log.e("Username Error", "Username is null or empty");
         }
@@ -299,5 +301,126 @@ public class home extends Fragment {
                 }
         );
         requestQueue.add(jsonObjectRequest);
+    }
+
+    private void fetchUserLevel(String username) {
+        String url = "https://calestechsync.dermocura.net/calestechsync/getLevelByUsername.php"; // Replace with your actual URL
+
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                response -> {
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response);
+                        if (jsonResponse.has("level")) {
+                            String level = jsonResponse.getString("level");
+                            updateButtonStates(level);
+                            // Optionally, update UI elements based on level
+                        } else if (jsonResponse.has("error")) {
+                            String error = jsonResponse.getString("error");
+                            Log.e("Fetch Level", error);
+                            Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.e("Fetch Level", "Unexpected response format.");
+                            Toast.makeText(getContext(), "Unexpected response from server.", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e("Fetch Level", "JSON Parsing Error: " + e.getMessage());
+                        Toast.makeText(getContext(), "Data parsing error.", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    Log.e("Volley Error", error.toString());
+                    if (error.networkResponse != null && error.networkResponse.data != null) {
+                        String errorMsg = new String(error.networkResponse.data);
+                        Log.e("Error Response", errorMsg);
+                        Toast.makeText(getContext(), "Server error: " + errorMsg, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Network error occurred.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        ) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                params.put("username", username);
+                return params;
+            }
+        };
+
+        // Set a timeout and retry policy if needed
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                5000,
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+        requestQueue.add(stringRequest);
+    }
+
+    private void updateButtonStates(String selectedLevel) {
+        Button buttonBeginner = getView().findViewById(R.id.button);
+        Button buttonIntermediate = getView().findViewById(R.id.button4);
+        Button buttonAdvance = getView().findViewById(R.id.button5);
+
+        // Clear existing drawables
+        buttonBeginner.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+        buttonIntermediate.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+        buttonAdvance.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+
+        // Define the lock drawable
+        Drawable lockDrawable = ContextCompat.getDrawable(getContext(), R.drawable.ic_lock);
+        if (lockDrawable != null) {
+            lockDrawable.setBounds(0, 0, lockDrawable.getIntrinsicWidth(), lockDrawable.getIntrinsicHeight());
+        }
+
+        switch (selectedLevel) {
+            case "Beginner":
+                // Enable Beginner button without lock
+                buttonBeginner.setEnabled(true);
+                // Disable Intermediate and Advance with lock
+                buttonIntermediate.setEnabled(false);
+                buttonAdvance.setEnabled(false);
+                if (lockDrawable != null) {
+                    buttonIntermediate.setCompoundDrawablesWithIntrinsicBounds(null, null, lockDrawable, null);
+                    buttonAdvance.setCompoundDrawablesWithIntrinsicBounds(null, null, lockDrawable, null);
+                }
+                break;
+            case "Intermediate":
+                // Enable Beginner and Intermediate buttons without lock
+                buttonBeginner.setEnabled(true);
+                buttonIntermediate.setEnabled(true);
+                // Disable Advance with lock
+                buttonAdvance.setEnabled(false);
+                if (lockDrawable != null) {
+                    buttonAdvance.setCompoundDrawablesWithIntrinsicBounds(null, null, lockDrawable, null);
+                }
+                break;
+            case "Advance":
+                // Enable all buttons without lock
+                buttonBeginner.setEnabled(true);
+                buttonIntermediate.setEnabled(true);
+                buttonAdvance.setEnabled(true);
+                break;
+            default:
+                // Enable all buttons without lock in case of unexpected level
+                buttonBeginner.setEnabled(true);
+                buttonIntermediate.setEnabled(true);
+                buttonAdvance.setEnabled(true);
+                break;
+        }
+
+        // Optionally, adjust button appearance for disabled state
+        adjustButtonAppearance(buttonBeginner);
+        adjustButtonAppearance(buttonIntermediate);
+        adjustButtonAppearance(buttonAdvance);
+    }
+
+    private void adjustButtonAppearance(Button button) {
+        if (!button.isEnabled()) {
+            // Change text color to gray
+            button.setTextColor(ContextCompat.getColor(getContext(), android.R.color.darker_gray));
+        } else {
+            // Change text color to primary color (replace with your desired color)
+            button.setTextColor(ContextCompat.getColor(getContext(), android.R.color.black));
+        }
     }
 }

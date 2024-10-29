@@ -29,6 +29,24 @@
                 android:textColor="#000000"
                 android:textStyle="bold" />
 
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_gravity="center">
+
+            <Button
+                android:id="@+id/showAllLogsButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@null"
+                android:textColor="@color/accentColor"
+                android:text="Show All Exercise Logs" />
+
             <!-- Button on the right -->
             <Button
                 android:id="@+id/settingsButton"
@@ -40,6 +58,7 @@
                 android:background="@null"
                 android:textColor="@color/accentColor"
                 android:text="Weight In Today" />
+
         </LinearLayout>
 
         <androidx.cardview.widget.CardView
@@ -197,8 +216,7 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp">
+            android:layout_height="wrap_content">
 
             <!-- Y-axis label ("Weight") on the left of the chart -->
             <TextView
@@ -230,18 +248,47 @@
                 android:text="Date"
                 android:textColor="#000000" />
         </RelativeLayout>
-
-        <Button
-            android:id="@+id/showEMGDurationButton"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Show EMG Duration"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="16dp"
-            android:padding="12dp"
-            android:backgroundTint="@color/accentColor"
-            android:textColor="#FFFFFF"/>
+            android:orientation="horizontal"
+            android:layout_gravity="center">
 
+            <Button
+                android:id="@+id/showExerciseLogs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show Exercise log"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:padding="12dp"
+                android:backgroundTint="@color/accentColor"
+                android:textColor="#FFFFFF"/>
+
+            <Button
+                android:id="@+id/showEMGDurationButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show EMG Duration"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:padding="12dp"
+                android:backgroundTint="@color/accentColor"
+                android:textColor="#FFFFFF"/>
+        </LinearLayout>
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bot_nav"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="#F8F8F8"
+            android:padding="15dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0" />
 
     </LinearLayout>
 </ScrollView>
